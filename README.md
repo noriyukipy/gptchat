@@ -212,7 +212,7 @@ $ curl localhost:8080/generate -d '{"text": "Hi"}' -H"content-type:application/j
 
 ## Test
 
-Execute test with circleci local client.
+Execute test with pytest.
 
 ```sh
 $ pytest -v test/
