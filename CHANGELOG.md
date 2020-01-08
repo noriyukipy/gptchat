@@ -7,13 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.1.1]
+
 ### Added
 
-- License file to license as MIT
+- Add license file.
+
+### Changed
+
+- Fix vocab_size and num_albels in the BaseModel training script to adapt Transformers from v2.2.0 to v2.3.0.
+
 
 ## v0.1.0
 
 ### Added
 
-- Prerain scripts to train a GPT-2 model from scratch.
-- Finetune scripts to train a dialog model from GPT-2 model.
+- Add scripts for BaseModel and ChatModel.

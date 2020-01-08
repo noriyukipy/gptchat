@@ -44,12 +44,13 @@ def main(
 
     # Define config
     config = GPT2Config(
-        vocab_size_or_config_json_file=len(tokenizer),
+        vocab_size=len(tokenizer),
         n_ctx=n_ctx,
         n_positions=block_size,
         n_embd=n_embd,
         n_layer=n_layer,
         n_head=n_head,
+        num_labels=1,
     )
 
     # Check consistency between config and options
