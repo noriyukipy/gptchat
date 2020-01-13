@@ -1,6 +1,9 @@
 # GPTChat
 
 GPTChat is for those who are eager to build a chatting bot with the latest GPT-2 model especially for Japanese.
+
+💡 For Japanese, read [最新のニューラル会話モデルでおしゃべりしよう！ - GPT-2でチャットボット作成](https://noriyukipy.github.io/article/gptchat_howto_ja.html) first to understand the background and how to apply this repository to Japanese dataset; 
+
 GPTChat provides two types of training and generating scripts; **BaseModel** and **ChatModel**.
 
 BaseModel is a GPT-2 languaga model.
