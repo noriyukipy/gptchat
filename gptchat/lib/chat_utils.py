@@ -42,17 +42,19 @@ def generate(tokenizer, model, text, max_len, top_p):
     return tokenizer.decode(input_ids.tolist()[0])
 
 
-def extract_reply(model_output, unk_token):
+def extract_reply(model_output):
     """Extract reply part from model output."""
+    default_special_tokens = ["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]"]
+
     def escape(xs):
         return xs.replace("[", "\[").replace("]", "\]")
-    pattern_to_replace = [
-        (escape(special_tokens.EOS), ""),
-        (escape(unk_token), ""),
-        (r"##\S+", ""),
-        (r"\s", ""),
-    ]
+
     reply = model_output.split(special_tokens.SEP)[1]
+
+    pattern_to_replace = [(r"##\S+", ""), (r"\s", "")]
+    pattern_to_replace.extend([(escape(item), "") for item in default_special_tokens])
+    pattern_to_replace.extend([(escape(item), "") for item in special_tokens.get()])
+
     for pat, replaced in pattern_to_replace:
         reply = re.sub(pat, replaced, reply)
 
