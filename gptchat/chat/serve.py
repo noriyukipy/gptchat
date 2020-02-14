@@ -24,7 +24,7 @@ class ResponderModel:
         res_data = {
             "text": text,
             "model_output": gen,
-            "reply": chat_utils.extract_reply(gen, self._tokenizer.unk_token)
+            "reply": chat_utils.extract_reply(gen)
         }
         resp.media = res_data
 
