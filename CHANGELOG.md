@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Introduce pipenv to keep packages depended in development
+
+### Fixed
+
+- Replace distutils with setuptools to install this package
+
 ## [v0.1.2] - 2020/02/14
 
 ### Fixed
@@ -22,7 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fix vocab_size and num_albels in the BaseModel training script to adapt Transformers from v2.2.0 to v2.3.0.
-
 
 ## v0.1.0
 

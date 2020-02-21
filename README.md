@@ -215,8 +215,14 @@ $ curl localhost:8080/generate -d '{"text": "Hi"}' -H"content-type:application/j
 
 ## Test
 
-Execute test with pytest.
+Install packages for development with pipenv first.
 
 ```sh
-$ pytest -v test/
+$ pipenv install
+```
+
+Then execute pytest to run tests.
+
+```sh
+$ pipenv run pytest test
 ```
