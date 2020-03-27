@@ -2,3 +2,5 @@ example/chat/train_dist.txt
 example/wiki*
 example/*output*
 gptchat.egg-info/
+notebooks/gpt/output/
+
