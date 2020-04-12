@@ -8,6 +8,6 @@ ENV LC_ALL=ja_JP.UTF-8
 # Install
 COPY ./ /app
 WORKDIR /app
-RUN pip install ./
+RUN pip install -e ./
 
 WORKDIR /work

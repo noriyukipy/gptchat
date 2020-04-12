@@ -1,39 +1,48 @@
 import responder
 import torch
+from collections import namedtuple
 from transformers import BertJapaneseTokenizer
 from transformers import GPT2LMHeadModel
 from gptchat.lib.generator import TopPGenerator
 
 
-class LMGenerator:
-    def __init__(self, model, tokenizer):
-        self._model = model
-        self._tokenizer = tokenizer
+class ChatHandler:
+    def __init__(self, predictor):
+        self._predictor = predictor
 
-    async def generate(self, req, resp):
-        # Validate input
-        req_json = await req.media()
-        print(req_json)
+    async def handle(self, req, resp):
+        req_dict = await req.media()
         try:
-            text = req_json["text"]
-            max_len = req_json.get("max_len", 100)
-            top_p = req_json.get("top_p", 0.8)
+            param = self.parse_param(req_dict)
         except KeyError:
             resp.status_code = 400
-            resp.media = {"error": "request json body should have 'text' key"}
+            resp.media = {"error": "request json body should have 'context' key"}
             return
+        generated = self._predictor.predict(context=param.context)
+        resp.media = {"context": param.context, "response": generated}
 
-        # Generate text
-        gen_text = self._generate_text(text, max_len, top_p)
+    def parse_param(self, req_dict):
+        try:
+            context = req_dict["context"]
+        except KeyError:
+            raise KeyError
 
-        # Set response
-        resp.media = {"context": text, "response": gen_text}
+        ReqParam = namedtuple("ReqParam", ["context"])
+        return ReqParam(context=context)
 
-    def _generate_text(self, text, max_len, top_p):
+
+class ResponsePredictor:
+    def __init__(self, model, tokenizer, max_len, top_p):
+        self._model = model
+        self._tokenizer = tokenizer
+        self._max_len = max_len
+        self._top_p = top_p
+
+    def predict(self, context):
         SEP, BOS, EOS = self._tokenizer.additional_special_tokens
 
         seq = [
-            [BOS] + self._tokenizer.tokenize(text),
+            [BOS] + self._tokenizer.tokenize(context),
             [SEP]
         ]
         tokens = sum(seq, [])
@@ -44,10 +53,10 @@ class LMGenerator:
         )
         segment_ids = self._tokenizer.convert_tokens_to_ids(segments)
 
-        generator = TopPGenerator(self._model, top_p)
+        generator = TopPGenerator(self._model, self._top_p)
         input_ids = torch.tensor([token_ids])
         token_type_ids = torch.tensor([segment_ids])
-        for _ in range(max_len):
+        for _ in range(self._max_len):
             next_id = generator.step(
                 input_ids=input_ids,
                 token_type_ids=token_type_ids
@@ -62,18 +71,20 @@ class LMGenerator:
         return gen_text
 
 
-def build_api(model_dir):
+def main(model_dir, address=None, port=None, max_len=100, top_p=0.8):
     tokenizer = BertJapaneseTokenizer.from_pretrained(model_dir)
     model = GPT2LMHeadModel.from_pretrained(model_dir)
-    gen = LMGenerator(model, tokenizer)
+    predictor = ResponsePredictor(
+        model=model,
+        tokenizer=tokenizer,
+        max_len=max_len,
+        top_p=top_p
+    )
 
+    # set routing
     api = responder.API()
-    api.add_route("/generate", gen.generate)
-    return api
+    api.add_route("/chat", ChatHandler(predictor=predictor).handle)
 
-
-def main(model_dir, address=None, port=None):
-    api = build_api(model_dir)
     api.run(address=address, port=port)
 
 

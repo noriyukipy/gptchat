@@ -10,6 +10,7 @@ setuptools.setup(
         "fire==0.2.1",
         "responder==2.0.5",
         "torch>=1.3.0",
+        "pytest==5.4.1",
     ],
     version="0.2.0",
     author="Noriyuki Abe",
