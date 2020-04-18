@@ -60,30 +60,12 @@ def sample_multinomial(dist):
     )
 
 
-class TopKGenerator:
+class TopPKGenerator:
     """Sentence generator to sandom sampling from top-k distribution"""
-    def __init__(self, model, top_k):
-        self._model = model
-        self._top_k = top_k
-
-    def step(self, input_ids):
-        """
-        """
-        # Predict next word distribution
-        output = self._model(input_ids=input_ids)
-        # last_hidden_state dim = (batch_size, input_ids length, num_vocabs)
-        last_hidden_state = output[0]
-        next_id_dist = last_hidden_state[:, -1, :]
-        filtered_dist = filter_to_topk(self._top_k, next_id_dist)
-
-        return sample_multinomial(filtered_dist)
-
-
-class TopPGenerator:
-    """Sentence generator to sandom sampling from top-k distribution"""
-    def __init__(self, model, top_p):
+    def __init__(self, model, top_p, top_k):
         self._model = model
         self._top_p = top_p
+        self._top_k = top_k
 
     def step(self, **argv):
         """
@@ -94,5 +76,6 @@ class TopPGenerator:
         last_hidden_state = output[0]
         next_id_dist = last_hidden_state[:, -1, :]
         filtered_dist = filter_to_topp(self._top_p, next_id_dist)
+        filtered_dist = filter_to_topk(self._top_k, next_id_dist)
 
         return sample_multinomial(filtered_dist)

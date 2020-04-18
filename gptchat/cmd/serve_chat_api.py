@@ -3,7 +3,7 @@ import torch
 from collections import namedtuple
 from transformers import BertJapaneseTokenizer
 from transformers import GPT2LMHeadModel
-from gptchat.lib.generator import TopPGenerator
+from gptchat.lib.generator import TopPKGenerator
 
 
 class ChatHandler:
@@ -32,11 +32,12 @@ class ChatHandler:
 
 
 class ResponsePredictor:
-    def __init__(self, model, tokenizer, max_len, top_p):
+    def __init__(self, model, tokenizer, max_len, top_p, top_k):
         self._model = model
         self._tokenizer = tokenizer
         self._max_len = max_len
         self._top_p = top_p
+        self._top_k = top_k
 
     def predict(self, context):
         SEP, BOS, EOS = self._tokenizer.additional_special_tokens
@@ -53,7 +54,7 @@ class ResponsePredictor:
         )
         segment_ids = self._tokenizer.convert_tokens_to_ids(segments)
 
-        generator = TopPGenerator(self._model, self._top_p)
+        generator = TopPKGenerator(self._model, top_p=self._top_p, top_k=self._top_k)
         input_ids = torch.tensor([token_ids])
         token_type_ids = torch.tensor([segment_ids])
         for _ in range(self._max_len):
@@ -71,14 +72,15 @@ class ResponsePredictor:
         return gen_text
 
 
-def main(model_dir, address=None, port=None, max_len=100, top_p=0.8):
+def main(model_dir, address=None, port=None, max_len=100, top_p=0.95, top_k=50):
     tokenizer = BertJapaneseTokenizer.from_pretrained(model_dir)
     model = GPT2LMHeadModel.from_pretrained(model_dir)
     predictor = ResponsePredictor(
         model=model,
         tokenizer=tokenizer,
         max_len=max_len,
-        top_p=top_p
+        top_p=top_p,
+        top_k=top_k,
     )
 
     # set routing
