@@ -68,8 +68,6 @@ class TopPKGenerator:
         self._top_k = top_k
 
     def step(self, **argv):
-        """
-        """
         # Predict next word distribution
         output = self._model(**argv)
         # last_hidden_state dim = (batch_size, input_ids length, num_vocabs)
@@ -78,4 +76,4 @@ class TopPKGenerator:
         filtered_dist = filter_to_topp(self._top_p, next_id_dist)
         filtered_dist = filter_to_topk(self._top_k, next_id_dist)
 
-        return sample_multinomial(filtered_dist)
+        return sample_multinomial(filtered_dist), output

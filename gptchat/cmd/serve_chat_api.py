@@ -2,7 +2,7 @@ import responder
 import torch
 from collections import namedtuple
 from transformers import BertJapaneseTokenizer
-from transformers import GPT2LMHeadModel
+from transformers import GPT2DoubleHeadsModel
 from gptchat.lib.generator import TopPKGenerator
 
 
@@ -32,12 +32,13 @@ class ChatHandler:
 
 
 class ResponsePredictor:
-    def __init__(self, model, tokenizer, max_len, top_p, top_k):
+    def __init__(self, model, tokenizer, max_len, top_p, top_k, num_cands):
         self._model = model
         self._tokenizer = tokenizer
         self._max_len = max_len
         self._top_p = top_p
         self._top_k = top_k
+        self._num_cands = num_cands
 
     def predict(self, context):
         SEP, BOS, EOS = self._tokenizer.additional_special_tokens
@@ -48,46 +49,57 @@ class ResponsePredictor:
         ]
         tokens = sum(seq, [])
         token_ids = self._tokenizer.convert_tokens_to_ids(tokens)
-        segments = (
+        segment_ids = (
             [0] * len(seq[0]) +
             [1] * len(seq[1])
         )
-        segment_ids = self._tokenizer.convert_tokens_to_ids(segments)
 
         generator = TopPKGenerator(self._model, top_p=self._top_p, top_k=self._top_k)
-        input_ids = torch.tensor([token_ids])
-        token_type_ids = torch.tensor([segment_ids])
+
+        # build inputs to model
+        input_ids = torch.tensor([token_ids for _ in range(self._num_cands)])
+        token_type_ids = torch.tensor([segment_ids for _ in range(self._num_cands)])
+
         for _ in range(self._max_len):
-            next_id = generator.step(
+            next_id, model_output = generator.step(
                 input_ids=input_ids,
                 token_type_ids=token_type_ids
             )
+
+            # if list([input_ids[0][-1]]) == self._tokenizer.convert_tokens_to_ids([EOS]):
+            #     break
+
+            # setup ids for next prediction
             input_ids = torch.cat([input_ids, next_id], dim=1)
-            token_type_ids = torch.cat([token_type_ids, torch.tensor([[1]])], dim=1)
+            token_type_ids = torch.cat([token_type_ids, torch.tensor([[1] for _ in range(self._num_cands)])], dim=1)
 
-            if list(next_id) == self._tokenizer.convert_tokens_to_ids([EOS]):
-                break
+        cands = []
+        for idx in range(input_ids.size()[0]):
+            gen_text = self._tokenizer.decode(input_ids[idx])
+            cands.append(gen_text)
 
-        gen_text = self._tokenizer.decode([int(x) for x in input_ids[0]])
-        return gen_text
+        return cands
 
 
-def main(model_dir, address=None, port=None, max_len=100, top_p=0.95, top_k=50):
+def main(model_dir, address=None, port=None, max_len=100, top_p=0.95, top_k=50, num_cands=3):
     tokenizer = BertJapaneseTokenizer.from_pretrained(model_dir)
-    model = GPT2LMHeadModel.from_pretrained(model_dir)
-    predictor = ResponsePredictor(
-        model=model,
-        tokenizer=tokenizer,
-        max_len=max_len,
-        top_p=top_p,
-        top_k=top_k,
-    )
+    model = GPT2DoubleHeadsModel.from_pretrained(model_dir)
+    model.eval()
+    with torch.set_grad_enabled(False):
+        predictor = ResponsePredictor(
+            model=model,
+            tokenizer=tokenizer,
+            max_len=max_len,
+            top_p=top_p,
+            top_k=top_k,
+            num_cands=num_cands,
+        )
 
-    # set routing
-    api = responder.API()
-    api.add_route("/chat", ChatHandler(predictor=predictor).handle)
+        # set routing
+        api = responder.API()
+        api.add_route("/chat", ChatHandler(predictor=predictor).handle)
 
-    api.run(address=address, port=port)
+        api.run(address=address, port=port)
 
 
 if __name__ == "__main__":
