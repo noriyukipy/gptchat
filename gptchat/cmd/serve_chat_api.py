@@ -42,6 +42,7 @@ class ResponsePredictor:
 
     def predict(self, context):
         SEP, BOS, EOS = self._tokenizer.additional_special_tokens
+        SEP_id, BOS_id, EOS_id = self._tokenizer.additional_special_tokens_ids
 
         seq = [
             [BOS] + self._tokenizer.tokenize(context),
@@ -54,14 +55,18 @@ class ResponsePredictor:
             [1] * len(seq[1])
         )
 
-        generator = TopPKGenerator(self._model, top_p=self._top_p, top_k=self._top_k)
+        generator = TopPKGenerator(
+            model=self._model,
+            top_p=self._top_p,
+            top_k=self._top_k
+        )
 
         # build inputs to model
         input_ids = torch.tensor([token_ids for _ in range(self._num_cands)])
         token_type_ids = torch.tensor([segment_ids for _ in range(self._num_cands)])
 
         for _ in range(self._max_len):
-            next_id, model_output = generator.step(
+            next_id, _ = generator.step(
                 input_ids=input_ids,
                 token_type_ids=token_type_ids
             )
@@ -69,16 +74,34 @@ class ResponsePredictor:
             # if list([input_ids[0][-1]]) == self._tokenizer.convert_tokens_to_ids([EOS]):
             #     break
 
-            # setup ids for next prediction
+            # update inputs to models for next prediction
             input_ids = torch.cat([input_ids, next_id], dim=1)
             token_type_ids = torch.cat([token_type_ids, torch.tensor([[1] for _ in range(self._num_cands)])], dim=1)
 
+        # calclualte EOS token to calculate sentence probability
+        input_shape = input_ids.size()
+        eos_index = [input_shape[1]-1 for _ in range(input_shape[0])]
+        for sample_idx, idx in torch.nonzero(input_ids == EOS_id):
+            idx = int(idx)
+            if idx < eos_index[sample_idx]:
+                eos_index[sample_idx] = idx
+
+        # calculate multi-choice probability
+        _, model_output = generator.step(
+            input_ids=input_ids,
+            token_type_ids=token_type_ids,
+            mc_token_ids=torch.tensor(eos_index),
+        )
+        _, mc_prob = model_output[:2]
+
+        # create candidates to return
         cands = []
         for idx in range(input_ids.size()[0]):
             gen_text = self._tokenizer.decode(input_ids[idx])
-            cands.append(gen_text)
+            prob = float(mc_prob[idx])
+            cands.append({"text": gen_text, "score": prob})
 
-        return cands
+        return list(sorted(cands, key=lambda x: x["score"], reverse=True))
 
 
 def main(model_dir, address=None, port=None, max_len=100, top_p=0.95, top_k=50, num_cands=3):
