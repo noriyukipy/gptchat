@@ -65,26 +65,35 @@ class ResponsePredictor:
         input_ids = torch.tensor([token_ids for _ in range(self._num_cands)])
         token_type_ids = torch.tensor([segment_ids for _ in range(self._num_cands)])
 
+        # keep EOS token
+        # - to check whether generation completed or not
+        # - to calculate sentence probability
+        eos_index = [float("infinity") for _ in range(self._num_cands)]
+
         for _ in range(self._max_len):
             next_id, _ = generator.step(
                 input_ids=input_ids,
                 token_type_ids=token_type_ids
             )
-
-            # if list([input_ids[0][-1]]) == self._tokenizer.convert_tokens_to_ids([EOS]):
-            #     break
-
             # update inputs to models for next prediction
             input_ids = torch.cat([input_ids, next_id], dim=1)
             token_type_ids = torch.cat([token_type_ids, torch.tensor([[1] for _ in range(self._num_cands)])], dim=1)
 
-        # calclualte EOS token to calculate sentence probability
-        input_shape = input_ids.size()
-        eos_index = [input_shape[1]-1 for _ in range(input_shape[0])]
-        for sample_idx, idx in torch.nonzero(input_ids == EOS_id):
-            idx = int(idx)
-            if idx < eos_index[sample_idx]:
-                eos_index[sample_idx] = idx
+            # Update EOS token index
+            for sample_idx, idx in torch.nonzero(input_ids == EOS_id):
+                idx = int(idx)
+                if idx < eos_index[sample_idx]:
+                    eos_index[sample_idx] = idx
+            try:
+                eos_index.index(float("infinity"))
+            except ValueError:
+                break
+
+        # if eos index is infinity, set it to the last index
+        eos_index = [
+            input_ids.size()[1]-1 if x == float("infinity") else x
+            for x in eos_index
+        ]
 
         # calculate multi-choice probability
         _, model_output = generator.step(
@@ -96,8 +105,8 @@ class ResponsePredictor:
 
         # create candidates to return
         cands = []
-        for idx in range(input_ids.size()[0]):
-            gen_text = self._tokenizer.decode(input_ids[idx])
+        for idx in range(self._num_cands):
+            gen_text = self._tokenizer.decode(input_ids[idx][:eos_index[idx]+1])
             prob = float(mc_prob[idx])
             cands.append({"text": gen_text, "score": prob})
 
