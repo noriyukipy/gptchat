@@ -18,8 +18,8 @@ class ChatHandler:
             resp.status_code = 400
             resp.media = {"error": "request json body should have 'context' key"}
             return
-        generated = self._predictor.predict(context=param.context)
-        resp.media = {"context": param.context, "response": generated}
+        response, candidates = self._predictor.predict(context=param.context)
+        resp.media = {"context": param.context, "response": response, "candidates": candidates}
 
     def parse_param(self, req_dict):
         try:
@@ -106,11 +106,14 @@ class ResponsePredictor:
         # create candidates to return
         cands = []
         for idx in range(self._num_cands):
-            gen_text = self._tokenizer.decode(input_ids[idx][:eos_index[idx]+1])
+            gen_text = self._tokenizer.decode(input_ids[idx][len(token_ids):eos_index[idx]])
             prob = float(mc_prob[idx])
             cands.append({"text": gen_text, "score": prob})
 
-        return list(sorted(cands, key=lambda x: x["score"], reverse=True))
+        candidates = list(sorted(cands, key=lambda x: x["score"], reverse=True))
+        response = candidates[0]["text"]
+
+        return response, candidates
 
 
 def main(model_dir, address=None, port=None, max_len=100, top_p=0.95, top_k=50, num_cands=3):
