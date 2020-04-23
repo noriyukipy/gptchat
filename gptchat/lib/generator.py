@@ -53,6 +53,12 @@ def filter_to_topp(top_p, dist):
     return dist
 
 
+def filter_bad_ids(bad_ids, dist):
+    dist = dist.clone()
+    dist[:, bad_ids] = -float("infinity")
+    return dist
+
+
 def sample_multinomial(dist):
     return torch.multinomial(
         input=torch.functional.F.softmax(dist, dim=-1),
@@ -62,10 +68,11 @@ def sample_multinomial(dist):
 
 class TopPKGenerator:
     """Sentence generator to sandom sampling from top-k distribution"""
-    def __init__(self, model, top_p, top_k):
+    def __init__(self, model, top_p, top_k, bad_ids):
         self._model = model
         self._top_p = top_p
         self._top_k = top_k
+        self._bad_ids = bad_ids
 
     def step(self, **argv):
         # Predict next word distribution
@@ -75,5 +82,7 @@ class TopPKGenerator:
         next_id_dist = last_hidden_state[:, -1, :]
         filtered_dist = filter_to_topp(self._top_p, next_id_dist)
         filtered_dist = filter_to_topk(self._top_k, next_id_dist)
+        filtered_dist = filter_bad_ids(self._bad_ids, next_id_dist)
+
 
         return sample_multinomial(filtered_dist), output

@@ -32,13 +32,14 @@ class ChatHandler:
 
 
 class ResponsePredictor:
-    def __init__(self, model, tokenizer, max_len, top_p, top_k, num_cands):
+    def __init__(self, model, tokenizer, max_len, top_p, top_k, num_cands, token_coverage_filter_ratio):
         self._model = model
         self._tokenizer = tokenizer
         self._max_len = max_len
         self._top_p = top_p
         self._top_k = top_k
         self._num_cands = num_cands
+        self._token_coverage_filter_ratio = token_coverage_filter_ratio
 
     def predict(self, context):
         SEP, BOS, EOS = self._tokenizer.additional_special_tokens
@@ -58,7 +59,8 @@ class ResponsePredictor:
         generator = TopPKGenerator(
             model=self._model,
             top_p=self._top_p,
-            top_k=self._top_k
+            top_k=self._top_k,
+            bad_ids=[0, 1],  # Ignore [PAD] and [UNK]
         )
 
         # build inputs to model
@@ -95,20 +97,46 @@ class ResponsePredictor:
             for x in eos_index
         ]
 
+        # # Define target
+        # target_ids = []
+        # for i, idx in enumerate(eos_index):
+        #     tgt = [-100] * len(seq[0]) + [-100] + list(int(x) for x in input_ids[i][len(seq[0])+1:idx+1]) + [-100]*len(input_ids[i][idx+1:])
+        #     target_ids.append(tgt)
+        # target_ids = torch.tensor(target_ids)
+
         # calculate multi-choice probability
-        _, model_output = generator.step(
+        model_output = self._model(
             input_ids=input_ids,
             token_type_ids=token_type_ids,
+            # lm_labels=target_ids,
             mc_token_ids=torch.tensor(eos_index),
         )
-        _, mc_prob = model_output[:2]
+        lm_score, mc_score = model_output[:2]
 
         # create candidates to return
         cands = []
         for idx in range(self._num_cands):
             gen_text = self._tokenizer.decode(input_ids[idx][len(token_ids):eos_index[idx]])
-            prob = float(mc_prob[idx])
+            prob = float(mc_score[idx])
             cands.append({"text": gen_text, "score": prob})
+
+        # overrap penalty
+        filtered_cands = []
+        context_tokens = set(self._tokenizer.tokenize(context))
+        for cand in cands:
+            num_total = 0
+            num_overwrap = 0
+            for tkn in cand["text"].split():
+                num_total += 1
+                if tkn in context_tokens:
+                    num_overwrap += 1
+            ratio = num_overwrap / num_total
+            if ratio > self._token_coverage_filter_ratio:
+                print("Drop candidate {} > {}: {}".format(ratio, self._token_coverage_filter_ratio, cand))
+                continue
+            filtered_cands.append(cand)
+        if filtered_cands:
+            cands = filtered_cands
 
         candidates = list(sorted(cands, key=lambda x: x["score"], reverse=True))
         response = candidates[0]["text"]
@@ -116,7 +144,7 @@ class ResponsePredictor:
         return response, candidates
 
 
-def main(model_dir, address=None, port=None, max_len=100, top_p=0.95, top_k=50, num_cands=3):
+def main(model_dir, address=None, port=None, max_len=100, top_p=0.95, top_k=50, num_cands=3, token_coverage_filter_ratio=1.0):
     tokenizer = BertJapaneseTokenizer.from_pretrained(model_dir)
     model = GPT2DoubleHeadsModel.from_pretrained(model_dir)
     model.eval()
@@ -128,6 +156,7 @@ def main(model_dir, address=None, port=None, max_len=100, top_p=0.95, top_k=50, 
             top_p=top_p,
             top_k=top_k,
             num_cands=num_cands,
+            token_coverage_filter_ratio=token_coverage_filter_ratio,
         )
 
         # set routing

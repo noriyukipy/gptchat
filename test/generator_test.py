@@ -52,3 +52,16 @@ def test_filter_to_topp_under():
          [-inf, -inf, -inf, -inf, 9]]
     )
     assert torch.all(torch.eq(res, expected))
+
+
+def test_filter_bad_ids():
+    res = generator.filter_bad_ids(
+        bad_ids=[1, 2],
+        dist=torch.Tensor([[2, 0, 3, 1, -1], [5, 6, 7, 8, 9]])
+    )
+    inf = float("Inf")
+    expected = torch.Tensor(
+        [[2, -inf, -inf, 1, -1],
+         [5, -inf, -inf, 8, 9]]
+    )
+    assert torch.all(torch.eq(res, expected))
