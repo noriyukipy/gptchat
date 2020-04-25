@@ -97,12 +97,12 @@ class ResponsePredictor:
             for x in eos_index
         ]
 
-        # # Define target
-        # target_ids = []
-        # for i, idx in enumerate(eos_index):
-        #     tgt = [-100] * len(seq[0]) + [-100] + list(int(x) for x in input_ids[i][len(seq[0])+1:idx+1]) + [-100]*len(input_ids[i][idx+1:])
-        #     target_ids.append(tgt)
-        # target_ids = torch.tensor(target_ids)
+        # Define target
+        target_ids = []
+        for i, idx in enumerate(eos_index):
+            tgt = [-100] * len(seq[0]) + [-100] + list(int(x) for x in input_ids[i][len(seq[0])+1:idx+1]) + [-100]*len(input_ids[i][idx+1:])
+            target_ids.append(tgt)
+        target_ids = torch.tensor(target_ids)
 
         # calculate multi-choice probability
         model_output = self._model(
@@ -111,14 +111,25 @@ class ResponsePredictor:
             # lm_labels=target_ids,
             mc_token_ids=torch.tensor(eos_index),
         )
-        lm_score, mc_score = model_output[:2]
+        lm_prediction_scores, mc_prediction_scores = model_output[:2]
+
+        from torch.nn import CrossEntropyLoss
+        loss = CrossEntropyLoss()
+
+        loss = CrossEntropyLoss()
 
         # create candidates to return
         cands = []
         for idx in range(self._num_cands):
             gen_text = self._tokenizer.decode(input_ids[idx][len(token_ids):eos_index[idx]])
-            prob = float(mc_score[idx])
-            cands.append({"text": gen_text, "score": prob})
+            prob = float(mc_prediction_scores[idx])
+            # Calculate score here
+            lm_score = loss(lm_prediction_scores[idx], target_ids[idx])
+            mc_score = loss(mc_prediction_scores.reshape([1] + list(mc_prediction_scores.size())), torch.tensor([idx]))
+            print(lm_score, mc_score, gen_text)
+
+            score = float(2*lm_score + mc_score)
+            cands.append({"text": gen_text, "score": -score})
 
         # overrap penalty
         filtered_cands = []
