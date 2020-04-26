@@ -19,7 +19,7 @@ class LMGenerator:
         print(req_json)
         try:
             context = req_json["context"]
-            response = req_json["response"]
+            response = req_json.get("response", "")
         except KeyError:
             resp.status_code = 400
             resp.media = {"error": "request json body should have 'text' key"}
