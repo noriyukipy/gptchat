@@ -60,9 +60,6 @@ class LMGenerator:
             input_ids = torch.cat([input_ids, next_id], dim=1)
             token_type_ids = torch.cat([token_type_ids, torch.tensor([[RES_id]])], dim=1)
 
-            print(input_ids)
-            print(token_type_ids)
-
             if next_id == self._tokenizer.cls_token_id:
                 break
 
