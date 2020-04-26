@@ -55,7 +55,7 @@ def filter_to_topp(top_p, dist):
 
 def filter_bad_ids(bad_ids, dist):
     dist = dist.clone()
-    dist[:, bad_ids] = -float("infinity")
+    dist[:, bad_ids] = -float("Inf")
     return dist
 
 
