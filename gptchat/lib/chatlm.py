@@ -42,6 +42,8 @@ class ChatLMDataset(torch.utils.data.Dataset):
             border_idx = len(tokens[0])
             target_ids = [-100] * border_idx + input_ids[border_idx:]
 
+            assert len(input_ids) == len(token_type_ids) == len(target_ids)
+
             input_ids_list.append(input_ids)
             token_type_ids_list.append(token_type_ids)
             target_ids_list.append(target_ids)
@@ -73,7 +75,7 @@ class ChatLMCollation:
             x = torch.nn.utils.rnn.pad_sequence(
                 items,
                 batch_first=True,
-                padding_value=self._padding_value
+                padding_value=self._padding_value if idx <= 1 else -100
             )
             res.append(x.reshape(len(batch), -1, x.size()[1]))
 
