@@ -44,10 +44,6 @@ class LMGenerator:
         token_types = [CTX] * len(tokens[0]) + [RES] * len(tokens[1])
         token_type_ids = torch.tensor([self._tokenizer.convert_tokens_to_ids(token_types)])
 
-        print(tokens)
-        print(input_ids)
-        print(token_type_ids)
-
         # Prepare generator
         generator = TopPKGenerator(
             model=self._model,
