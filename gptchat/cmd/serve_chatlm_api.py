@@ -77,16 +77,18 @@ class LMGenerator:
 def build_api(model_dir, max_len, top_p, top_k):
     tokenizer = BertJapaneseTokenizer.from_pretrained(model_dir)
     model = GPT2LMHeadModel.from_pretrained(model_dir)
-    gen = LMGenerator(model, tokenizer, max_len, top_p, top_k)
+    model.eval()
 
+    gen = LMGenerator(model, tokenizer, max_len, top_p, top_k)
     api = responder.API()
     api.add_route("/chat", gen.generate)
     return api
 
 
 def main(model_dir, address=None, port=None, max_len=100, top_p=0.95, top_k=50):
-    api = build_api(model_dir, max_len, top_p, top_k)
-    api.run(address=address, port=port)
+    with torch.set_grad_enabled(False):
+        api = build_api(model_dir, max_len, top_p, top_k)
+        api.run(address=address, port=port)
 
 
 if __name__ == "__main__":

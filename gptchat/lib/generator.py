@@ -80,9 +80,10 @@ class TopPKGenerator:
         # last_hidden_state dim = (batch_size, input_ids length, num_vocabs)
         last_hidden_state = output[0]
         next_id_dist = last_hidden_state[:, -1, :]
-        filtered_dist = filter_to_topp(self._top_p, next_id_dist)
-        filtered_dist = filter_to_topk(self._top_k, next_id_dist)
-        filtered_dist = filter_bad_ids(self._bad_ids, next_id_dist)
 
+        filtered_dist = next_id_dist
+        filtered_dist = filter_to_topp(self._top_p, filtered_dist)
+        filtered_dist = filter_to_topk(self._top_k, filtered_dist)
+        filtered_dist = filter_bad_ids(self._bad_ids, filtered_dist)
 
         return sample_multinomial(filtered_dist), output
