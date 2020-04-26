@@ -77,7 +77,7 @@ class Trainer:
 
                         if phase == PHASE_TRAIN:
                             loss.backward()
-                            torch.nn.utils.clip_grad_norm_(self._net.parameters(), self._.max_grad_norm)
+                            torch.nn.utils.clip_grad_norm_(self._net.parameters(), self._max_grad_norm)
                             self._optimizer.step()
                             self._scheduler.step()
 
