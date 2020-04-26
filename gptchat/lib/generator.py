@@ -81,9 +81,13 @@ class TopPKGenerator:
         last_hidden_state = output[0]
         next_id_dist = last_hidden_state[:, -1, :]
 
+        filters = [
+            lambda dist: filter_to_topp(self._top_p, dist),
+            lambda dist: filter_to_topk(self._top_k, dist),
+            lambda dist: filter_bad_ids(self._bad_ids, dist),
+        ]
         filtered_dist = next_id_dist
-        filtered_dist = filter_to_topp(self._top_p, filtered_dist)
-        filtered_dist = filter_to_topk(self._top_k, filtered_dist)
-        filtered_dist = filter_bad_ids(self._bad_ids, filtered_dist)
+        for flt in filters:
+            filtered_dist = flt(filtered_dist)
 
         return sample_multinomial(filtered_dist), output
