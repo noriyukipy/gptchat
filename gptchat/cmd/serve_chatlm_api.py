@@ -33,16 +33,20 @@ class LMGenerator:
 
     def _generate_text(self, context, response):
         CTX, RES = self._tokenizer.additional_special_tokens
-        CTX_id, RES_id = self._tokenizer.additional_special_tokens
+        CTX_id, RES_id = self._tokenizer.additional_special_tokens_ids
 
         # Build input
         tokens = (
             self._tokenizer.tokenize(context),
             [self._tokenizer.sep_token] + self._tokenizer.tokenize(response)
         )
-        input_ids = self._tokenizer.convert_tokens_to_ids(sum(tokens, []))
+        input_ids = torch.tensor([self._tokenizer.convert_tokens_to_ids(sum(tokens, []))])
         token_types = [CTX] * len(tokens[0]) + [RES] * len(tokens[1])
-        token_type_ids = self._tokenizer.convert_tokens_to_ids(token_types)
+        token_type_ids = torch.tensor([self._tokenizer.convert_tokens_to_ids(token_types)])
+
+        print(tokens)
+        print(input_ids)
+        print(token_type_ids)
 
         # Prepare generator
         generator = TopPKGenerator(
@@ -53,9 +57,15 @@ class LMGenerator:
         )
 
         for _ in range(self._max_len):
-            next_id, _ = generator.step(input_ids=input_ids, token_type_ids=token_type_ids)
+            next_id, _ = generator.step(
+                input_ids=input_ids,
+                token_type_ids=token_type_ids
+            )
             input_ids = torch.cat([input_ids, next_id], dim=1)
-            token_type_ids = torch.cat([token_type_ids, [RES_id]], dim=1)
+            token_type_ids = torch.cat([token_type_ids, torch.tensor([[RES_id]])], dim=1)
+
+            print(input_ids)
+            print(token_type_ids)
 
             if next_id == self._tokenizer.cls_token_id:
                 break
