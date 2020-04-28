@@ -3,6 +3,7 @@ import torch
 from transformers import BertJapaneseTokenizer
 from transformers import GPT2LMHeadModel
 from gptchat.lib.generator import TopPKGenerator
+from gptchat.lib.response import extract_response_tokens
 
 
 class LMGenerator:
@@ -64,7 +65,12 @@ class LMGenerator:
                 break
 
         gen_text = self._tokenizer.decode([int(x) for x in input_ids[0]])
-        return gen_text
+        response_tokens = extract_response_tokens(
+            tokens=gen_text.split(" "),
+            start_token=self._tokenizer.sep_token,
+            end_token=self._tokenizer.cls_token_id
+        )
+        return "".join(response_tokens)
 
 
 def build_api(model_dir, max_len, top_p, top_k):
