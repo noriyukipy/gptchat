@@ -81,10 +81,13 @@ class TopPKGenerator:
         last_hidden_state = output[0]
         next_id_dist = last_hidden_state[:, -1, :]
 
+        # Set filter_bad_ids first
+        # If not, all values would be -inf, which leads to raise exception
+        # when calculating softmax
         filters = [
+            lambda dist: filter_bad_ids(self._bad_ids, dist),
             lambda dist: filter_to_topp(self._top_p, dist),
             lambda dist: filter_to_topk(self._top_k, dist),
-            lambda dist: filter_bad_ids(self._bad_ids, dist),
         ]
         filtered_dist = next_id_dist
         for flt in filters:
