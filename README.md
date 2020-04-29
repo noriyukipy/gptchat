@@ -26,7 +26,7 @@ Run `notebooks/gpt/train.ipynb` with [papermill](https://github.com/nteract/pape
 Papermill is useful for recording your specified parameters and environments.
 
 ```sh
-$ docker container run -v $(pwd):/work --gpus all --rm jupyter papermill notebooks/gpt/train.ipynb notebooks/gpt/output/output.ipynb -p n_ctx 512 -p block_size 512 -p data_dir notebooks/gpt/data -p output_dir notebooks/gpt/output
+$ docker container run -v $(pwd):/work --gpus all --rm gptchat papermill notebooks/gpt/train.ipynb notebooks/gpt/output/output.ipynb -p n_ctx 512 -p block_size 512 -p data_dir notebooks/gpt/data -p output_dir notebooks/gpt/output
 ```
 
 To check all the available argument, see the [notebook](notebooks/gpt/train.ipynb).
@@ -95,7 +95,7 @@ vocab.txt
 Run `gptchat.cmd.serve_chatlm_api` to serve API server to generate response.
 
 ```sh
-$ docker container run -v $(pwd):/work -p 8000:8000 --rm gptchat python -m gptchat.cmd.serve_chatlm_api --model_dir=output/chatlm/model --address=0.0.0.0 --port=8000 --top_p=0.95 --top_k=50 --max_len=20 --num_cands=3
+$ docker container run -v $(pwd):/work -p 8000:8000 --rm gptchat python -m gptchat.cmd.serve_chatlm_api --model_dir=notebooks/chatlm/output/chatlm/model --address=0.0.0.0 --port=8000 --top_p=0.95 --top_k=50 --max_len=20 --num_cands=3
 ```
 
 Then you can give request to the server.
