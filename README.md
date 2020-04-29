@@ -95,7 +95,7 @@ vocab.txt
 Run `gptchat.cmd.serve_chatlm_api` to serve API server to generate response.
 
 ```sh
-$ docker container run -v $(pwd):/work -p 8000:8000 --rm gptchat python -m gptchat.cmd.serve_chatlm_api --model_dir=output/chatlm/model --address=0.0.0.0 --port=8000 --top_p=0.95 --top_k=50 --max_len=20 --num_cands=3
+$ docker container run -v $(pwd):/work -p 8000:8000 --rm gptchat python -m gptchat.cmd.serve_chatlm_api --model_dir=notebooks/chatlm/output/chatlm/model --address=0.0.0.0 --port=8000 --top_p=0.95 --top_k=50 --max_len=20 --num_cands=3
 ```
 
 Then you can give request to the server.
