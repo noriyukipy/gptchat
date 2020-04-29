@@ -61,12 +61,14 @@ class ChatLMModelInputBuilder():
         )
 
     def update(self, model_input, next_ids):
-        # [TODO] Implement target inputs
         input_ids = model_input["input_ids"]
         token_type_ids = model_input["token_type_ids"]
+        # [TODO] Implement target inputs
+        #target_ids = model_input["target_ids"]
+
         batch_size = int(input_ids.size()[0])
 
-        CTX_id, RES_id = self._tokenizer.additional_special_tokens_ids
+        _, RES_id = self._tokenizer.additional_special_tokens_ids
         input_ids = torch.cat([input_ids, next_ids], dim=-1)
         token_type_ids = torch.cat(
             [token_type_ids,

@@ -1,22 +1,7 @@
 import torch
 
 
-def extract_response_tokens(tokens, start_token, end_token):
-    """
-    Args:
-        tokens (List[str]): tokens consisting of context and response.
-            response starts with start_token, and possibly ends with end_token
-        start_token (str): Token from which
-    """
-    start_idx = tokens.index(start_token)
-    try:
-        end_idx = tokens.index(end_token)
-    except ValueError:
-        end_idx = len(tokens) - 1
-    return tokens[start_idx+1:end_idx]
-
-
-def extract_response_ids(input_ids, start_token_id, end_token_id):
+def split_context_response_ids(input_ids, start_token_id, end_token_id):
     batch_size = input_ids.size()[0]
     start_index = [float("infinity") for _ in range(batch_size)]
     eos_index = [float("infinity") for _ in range(batch_size)]
@@ -39,4 +24,35 @@ def extract_response_ids(input_ids, start_token_id, end_token_id):
         for x in eos_index
     ]
 
-    return [ids[start_index[idx]+1:eos_index[idx]] for idx, ids in enumerate(input_ids)]
+    return [
+        (ids[:start_index[idx]], ids[start_index[idx]+1:eos_index[idx]])
+        for idx, ids in enumerate(input_ids)
+    ]
+
+
+def filter_out_by_coverage_ratio(context_response_ids, ratio):
+    """
+    Args:
+        context_response_ids: (Tuple[List[int], List[int]])
+        ratio: float
+    """
+    filtered_cands = []
+    for context_ids, response_ids in context_response_ids:
+        # Filter out response with length 0
+        if len(response_ids) == 0:
+            continue
+
+        num_total = 0
+        num_overwrap = 0
+        for rid in response_ids:
+            num_total += 1
+            if rid in context_ids:
+                num_overwrap += 1
+        if num_overwrap / num_total > ratio:
+            continue
+        filtered_cands.append((context_ids, response_ids))
+   
+    if not filtered_cands:
+        return context_response_ids
+
+    return filtered_cands
