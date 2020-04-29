@@ -5,8 +5,8 @@ import transformers
 class ChatLMTokenizerBuilder:
     def build(self):
         # Prepare tokenizer
-        cls = "bert-base-japanese"
-        tokenizer = transformers.BertJapaneseTokenizer.from_pretrained(cls)
+        cls = "cl-tohoku/bert-base-japanese"
+        tokenizer = transformers.AutoTokenizer.from_pretrained(cls)
 
         # Add special tokens
         special_tokens_dict = {
@@ -19,34 +19,86 @@ class ChatLMTokenizerBuilder:
         return tokenizer
 
 
+class ChatLMModelInputBuilder():
+    def __init__(self, tokenizer, add_end_token):
+        self._tokenizer = tokenizer
+        self._add_end_token = add_end_token
+
+    def build(self, ctx, res, batch_size=None):
+        CTX, RES = self._tokenizer.additional_special_tokens
+
+        if self._add_end_token:
+            end_token = [self._tokenizer.cls_token]
+        else:
+            end_token = []
+        tokens = (
+            self._tokenizer.tokenize(ctx),
+            [self._tokenizer.sep_token] + self._tokenizer.tokenize(res) + end_token
+        )
+
+        # Build input ids
+        input_ids = self._tokenizer.convert_tokens_to_ids(sum(tokens, []))
+
+        # Build token type ids
+        token_types = [CTX] * len(tokens[0]) + [RES] * len(tokens[1])
+        token_type_ids = self._tokenizer.convert_tokens_to_ids(token_types)
+
+        # Build target ids
+        border_idx = len(tokens[0])
+        target_ids = [-100] * border_idx + input_ids[border_idx:]
+
+        assert len(input_ids) == len(token_type_ids) == len(target_ids)
+
+        if batch_size:
+            input_ids = [input_ids for _ in range(batch_size)]
+            token_type_ids = [token_type_ids for _ in range(batch_size)]
+            target_ids = [target_ids for _ in range(batch_size)]
+
+        return dict(
+            input_ids=torch.tensor(input_ids),
+            token_type_ids=torch.tensor(token_type_ids),
+            target_ids=torch.tensor(target_ids),
+        )
+
+    def update(self, model_input, next_ids):
+        # [TODO] Implement target inputs
+        input_ids = model_input["input_ids"]
+        token_type_ids = model_input["token_type_ids"]
+        batch_size = int(input_ids.size()[0])
+
+        CTX_id, RES_id = self._tokenizer.additional_special_tokens_ids
+        input_ids = torch.cat([input_ids, next_ids], dim=-1)
+        token_type_ids = torch.cat(
+            [token_type_ids,
+             torch.tensor([[RES_id] for _ in range(batch_size)])],
+            dim=1
+        )
+        return dict(
+            input_ids=input_ids,
+            token_type_ids=token_type_ids
+        )
+
+    def ended(self, model_input):
+        input_ids = model_input["input_ids"]
+        cond = (input_ids == self._tokenizer.cls_token_id).sum(dim=1) > 0
+        return bool(torch.all(cond))
+
+
 class ChatLMDataset(torch.utils.data.Dataset):
     def __init__(self, tokenizer, ctx_res_list):
-        CTX, RES = tokenizer.additional_special_tokens
+        input_builder = ChatLMModelInputBuilder(
+            tokenizer=tokenizer,
+            add_end_token=False,
+        )
         input_ids_list = []
         token_type_ids_list = []
         target_ids_list = []
+
         for ctx, res in ctx_res_list:
-            tokens = (
-                tokenizer.tokenize(ctx),
-                [tokenizer.sep_token] + tokenizer.tokenize(res) + [tokenizer.cls_token]
-            )
-
-            # Build input ids
-            input_ids = tokenizer.convert_tokens_to_ids(sum(tokens, []))
-
-            # Build token type ids
-            token_types = [CTX] * len(tokens[0]) + [RES] * len(tokens[1])
-            token_type_ids = tokenizer.convert_tokens_to_ids(token_types)
-
-            # Build target ids
-            border_idx = len(tokens[0])
-            target_ids = [-100] * border_idx + input_ids[border_idx:]
-
-            assert len(input_ids) == len(token_type_ids) == len(target_ids)
-
-            input_ids_list.append(input_ids)
-            token_type_ids_list.append(token_type_ids)
-            target_ids_list.append(target_ids)
+            model_input = input_builder.build(ctx, res, batch_size=None)
+            input_ids_list.append(model_input["input_ids"])
+            token_type_ids_list.append(model_input["token_type_ids"])
+            target_ids_list.append(model_input["target_ids"])
 
         self._input_ids_list = input_ids_list
         self._token_type_ids_list = token_type_ids_list

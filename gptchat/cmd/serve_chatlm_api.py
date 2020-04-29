@@ -4,6 +4,7 @@ from transformers import BertJapaneseTokenizer
 from transformers import GPT2LMHeadModel
 from gptchat.lib.generator import TopPKGenerator
 from gptchat.lib.response import extract_response_tokens
+from gptchat.lib.chatlm import ChatLMModelInputBuilder
 
 
 class LMGenerator:
@@ -33,17 +34,14 @@ class LMGenerator:
         resp.media = {"response": gen_text}
 
     def _generate_text(self, context, response):
-        CTX, RES = self._tokenizer.additional_special_tokens
+        input_builder = ChatLMModelInputBuilder(
+            tokenizer=self._tokenizer,
+            add_end_token=False,
+        )
         CTX_id, RES_id = self._tokenizer.additional_special_tokens_ids
 
-        # Build input
-        tokens = (
-            self._tokenizer.tokenize(context),
-            [self._tokenizer.sep_token] + self._tokenizer.tokenize(response)
-        )
-        input_ids = torch.tensor([self._tokenizer.convert_tokens_to_ids(sum(tokens, []))])
-        token_types = [CTX] * len(tokens[0]) + [RES] * len(tokens[1])
-        token_type_ids = torch.tensor([self._tokenizer.convert_tokens_to_ids(token_types)])
+        # Prepare input
+        model_input = input_builder.build(context, response, batch_size=1)
 
         # Prepare generator
         generator = TopPKGenerator(
@@ -54,17 +52,15 @@ class LMGenerator:
         )
 
         for _ in range(self._max_len):
-            next_id, _ = generator.step(
-                input_ids=input_ids,
-                token_type_ids=token_type_ids
+            next_ids, _ = generator.step(
+                input_ids=model_input["input_ids"],
+                token_type_ids=model_input["token_type_ids"]
             )
-            input_ids = torch.cat([input_ids, next_id], dim=1)
-            token_type_ids = torch.cat([token_type_ids, torch.tensor([[RES_id]])], dim=1)
-
-            if next_id == self._tokenizer.cls_token_id:
+            model_input = input_builder.update(model_input, next_ids)
+            if input_builder.ended(model_input):
                 break
 
-        gen_text = self._tokenizer.decode([int(x) for x in input_ids[0]])
+        gen_text = self._tokenizer.decode([int(x) for x in model_input["input_ids"][0]])
         response_tokens = extract_response_tokens(
             tokens=gen_text.split(" "),
             start_token=self._tokenizer.sep_token,
