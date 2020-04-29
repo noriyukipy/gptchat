@@ -26,7 +26,7 @@ Run `notebooks/gpt/train.ipynb` with [papermill](https://github.com/nteract/pape
 Papermill is useful for recording your specified parameters and environments.
 
 ```sh
-$ docker container run -v $(pwd):/work --gpus all --rm jupyter papermill notebooks/gpt/train.ipynb notebooks/gpt/output/output.ipynb -p n_ctx 512 -p block_size 512 -p data_dir notebooks/gpt/data -p output_dir notebooks/gpt/output
+$ docker container run -v $(pwd):/work --gpus all --rm gptchat papermill notebooks/gpt/train.ipynb notebooks/gpt/output/output.ipynb -p n_ctx 512 -p block_size 512 -p data_dir notebooks/gpt/data -p output_dir notebooks/gpt/output
 ```
 
 To check all the available argument, see the [notebook](notebooks/gpt/train.ipynb).
