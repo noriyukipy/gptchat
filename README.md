@@ -29,7 +29,7 @@ Papermill is useful for recording your specified parameters and environments.
 $ docker container run -v $(pwd):/work --gpus all --rm jupyter papermill notebooks/gpt/train.ipynb notebooks/gpt/output/output.ipynb -p n_ctx 512 -p block_size 512 -p data_dir notebooks/gpt/data -p output_dir notebooks/gpt/output
 ```
 
-To check all the available argument, see the [notebook](notebooks/chat/train.ipynb).
+To check all the available argument, see the [notebook](notebooks/gpt/train.ipynb).
 
 After finish training, the trained model is in the `${output_dir}/model`
 
