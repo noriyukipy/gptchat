@@ -7,13 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.2.0]
+
 ### Added
 
-- Introduce pipenv to keep packages depended in development
+- Introduced jupyternotebook executed with Papermill.
+- Implemented ChatLM model which is a simple sequence to sequence model using GPT-2.
+- Implemented TopPKGenerator to specify both top-p and top-k filtering.
 
-### Fixed
+### Removed
 
-- Replace distutils with setuptools to install this package
+- Removed ChatModel. This model will be implemented in the future, but currently it has some bugs. So this model is removed from current version.
 
 ## [v0.1.2] - 2020/02/14
 
