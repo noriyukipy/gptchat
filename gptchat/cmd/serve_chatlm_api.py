@@ -4,16 +4,18 @@ from transformers import BertJapaneseTokenizer
 from transformers import GPT2LMHeadModel
 from gptchat.lib.generator import TopPKGenerator
 from gptchat.lib.response import extract_response_tokens
+from gptchat.lib.response import extract_response_ids
 from gptchat.lib.chatlm import ChatLMModelInputBuilder
 
 
 class LMGenerator:
-    def __init__(self, model, tokenizer, max_len, top_p, top_k):
+    def __init__(self, model, tokenizer, max_len, top_p, top_k, num_cands):
         self._model = model
         self._tokenizer = tokenizer
         self._max_len = max_len
         self._top_p = top_p
         self._top_k = top_k
+        self._num_cands = num_cands
 
     async def generate(self, req, resp):
         # Validate input
@@ -38,10 +40,8 @@ class LMGenerator:
             tokenizer=self._tokenizer,
             add_end_token=False,
         )
-        CTX_id, RES_id = self._tokenizer.additional_special_tokens_ids
-
         # Prepare input
-        model_input = input_builder.build(context, response, batch_size=1)
+        model_input = input_builder.build(context, response, batch_size=self._num_cands)
 
         # Prepare generator
         generator = TopPKGenerator(
@@ -60,29 +60,29 @@ class LMGenerator:
             if input_builder.ended(model_input):
                 break
 
-        gen_text = self._tokenizer.decode([int(x) for x in model_input["input_ids"][0]])
-        response_tokens = extract_response_tokens(
-            tokens=gen_text.split(" "),
-            start_token=self._tokenizer.sep_token,
-            end_token=self._tokenizer.cls_token_id
+        res_ids = extract_response_ids(
+            model_input["input_ids"],
+            self._tokenizer.sep_token_id,
+            self._tokenizer.cls_token_id,
         )
-        return "".join(response_tokens)
+        responses = [self._tokenizer.decode(x) for x in res_ids]
+        return responses
 
 
-def build_api(model_dir, max_len, top_p, top_k):
+def build_api(model_dir, max_len, top_p, top_k, num_cands):
     tokenizer = BertJapaneseTokenizer.from_pretrained(model_dir)
     model = GPT2LMHeadModel.from_pretrained(model_dir)
     model.eval()
 
-    gen = LMGenerator(model, tokenizer, max_len, top_p, top_k)
+    gen = LMGenerator(model, tokenizer, max_len, top_p, top_k, num_cands)
     api = responder.API()
     api.add_route("/chat", gen.generate)
     return api
 
 
-def main(model_dir, address=None, port=None, max_len=100, top_p=0.95, top_k=50):
+def main(model_dir, address=None, port=None, max_len=100, top_p=0.95, top_k=50, num_cands=1):
     with torch.set_grad_enabled(False):
-        api = build_api(model_dir, max_len, top_p, top_k)
+        api = build_api(model_dir, max_len, top_p, top_k, num_cands)
         api.run(address=address, port=port)
 
 
