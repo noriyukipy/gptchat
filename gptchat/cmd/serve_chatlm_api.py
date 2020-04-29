@@ -6,29 +6,7 @@ from gptchat.lib.generator import TopPKGenerator
 from gptchat.lib.response import split_context_response_ids
 from gptchat.lib.response import filter_out_by_coverage_ratio
 from gptchat.lib.chatlm import ChatLMModelInputBuilder
-
-
-class APIHandler:
-    def __init__(self, generator):
-        self._generator = generator
-
-    async def generate(self, req, resp):
-        # Validate input
-        req_json = await req.media()
-        print(req_json)
-        try:
-            context = req_json["context"]
-            response = req_json.get("response", "")
-        except KeyError:
-            resp.status_code = 400
-            resp.media = {"error": "request json body should have 'text' key"}
-            return
-
-        # Generate text
-        gen_text = self._generator.generate(context, response)
-
-        # Set response
-        resp.media = {"response": gen_text}
+from gptchat.lib.api import APIHandler
 
 
 class ResponseGenerator:
