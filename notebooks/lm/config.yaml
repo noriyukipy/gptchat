@@ -1,0 +1,20 @@
+_params:
+    data_dir: "data"
+    output_dir: "output"
+
+    # model parameters
+    tokenizer_model_name: "cl-tohoku/bert-base-japanese"
+    n_embd: 768
+    n_layer: 12
+    n_head: 12
+    n_ctx: 512
+
+    # training parameters
+    seed: 1234
+    num_epochs: 10
+    batch_size: 2  # This parameter should be equal to n_ctx
+    block_size: 512
+    learning_rate: 0.00005
+    max_grad_norm: 1.0
+    warmup_rate: 0.1
+    patience: 1
