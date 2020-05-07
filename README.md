@@ -109,3 +109,20 @@ $ curl localhost:8000/chat -d '{"context": "これで完成！"}' -H"content-typ
   "response": "お疲れ様です!"
 }
 ```
+
+## Logs
+
+To monitor training progress, use tensorboard. Go to the output directory, and then run tensorboard.
+
+```sh
+$ docker container run -v $(pwd):/work -p6006:6006 -it --rm gptchat tensorboard --logdir . --host=0.0.0.0
+```
+
+
+## TF
+
+```sh
+$ docker image build -t gptchat_tf -f Dockerfile.tf .
+$ docker container run -v $(pwd):/work -w /work -p 8888:8888 --rm gptchat_tf jupyter notebook --ip 0.0.0.0 --allow-root
+$ docker container run -v $(pwd):/work -w /work --rm gptchat_tf papermill --log-level WARNING train.ipynb  output/output.ipynb -f config.yaml
+```
