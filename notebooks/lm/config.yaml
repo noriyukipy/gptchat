@@ -3,6 +3,8 @@ _params:
     output_dir: "output"
 
     # model parameters
+    # For English tokenizer, specify "gpt2"
+    # For Japanese tokenizer, specify "cl-tohoku/bert-base-japanese"
     tokenizer_model_name: "cl-tohoku/bert-base-japanese"
     n_embd: 768
     n_layer: 12
