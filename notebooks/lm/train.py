@@ -140,8 +140,7 @@ def train(params, tokenizer, x_train, y_train, x_valid, y_valid):
         ),
         keras.callbacks.TensorBoard(
             log_dir=tensorboard_output_dir,
-            histogram_freq=1,
-            embeddings_freq=1,
+            update_freq="batch",
         ),
         WarmupScheduler(total_steps * params.warmup_rate, params.learning_rate),
     ]
@@ -150,8 +149,7 @@ def train(params, tokenizer, x_train, y_train, x_valid, y_valid):
     history = model.fit(
         {"input_ids": x_train},
         y_train,
-        #epochs=_params.num_epochs,
-        epochs=1,
+        epochs=params.num_epochs,
         batch_size=params.batch_size,
         callbacks=callbacks_list,
         validation_data=({"input_ids": x_valid}, y_valid),
