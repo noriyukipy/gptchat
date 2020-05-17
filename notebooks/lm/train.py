@@ -141,12 +141,16 @@ def train(params, tokenizer, x_train, y_train, x_valid, y_valid):
         keras.callbacks.TensorBoard(
             log_dir=tensorboard_output_dir,
             update_freq="batch",
+            # To automatically refresh Tensorboard , set profile_batch=0
+            # See more details here https://github.com/tensorflow/tensorboard/issues/2412
+            profile_batch=0,  
         ),
         WarmupScheduler(total_steps * params.warmup_rate, params.learning_rate),
     ]
     
     # Train model
-    history = model.fit(
+    tokenizer.save_pretrained(model_save_dir)   
+    _ = model.fit(
         {"input_ids": x_train},
         y_train,
         epochs=params.num_epochs,
@@ -158,7 +162,6 @@ def train(params, tokenizer, x_train, y_train, x_valid, y_valid):
     # Restore the best model and save it as pretrained model format
     model.load_weights(checkpoint_model_path)
     model.save_pretrained(model_save_dir)
-    tokenizer.save_pretrained(model_save_dir)   
 
     # Save model with best performance
     return model
