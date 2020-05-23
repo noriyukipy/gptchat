@@ -124,5 +124,5 @@ $ docker container run -v $(pwd):/work -p6006:6006 -it --rm gptchat tensorboard 
 ```sh
 $ docker image build -t gptchat_tf -f Dockerfile.tf .
 $ docker container run -v $(pwd):/work -w /work -p 8888:8888 --rm gptchat_tf jupyter notebook --ip 0.0.0.0 --allow-root
-$ docker container run -v $(pwd):/work -w /work --rm gptchat_tf papermill --log-level WARNING train.ipynb  output/output.ipynb -f config.yaml
+$ docker container run --gpus all -v $(pwd):/work -rm -it gptchat_tf python -u train.py --config=config.yaml
 ```
