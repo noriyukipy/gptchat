@@ -115,7 +115,7 @@ $ curl localhost:8000/chat -d '{"context": "これで完成！"}' -H"content-typ
 To monitor training progress, use tensorboard. Go to the output directory, and then run tensorboard.
 
 ```sh
-$ docker container run -v $(pwd):/work -p6006:6006 -it --rm gptchat tensorboard --logdir . --host=0.0.0.0
+$ docker container run -v $(pwd):/work -w /work -p 6006:6006 --rm gptchat_tf tensorboard --logdir . --host=0.0.0.0
 ```
 
 
