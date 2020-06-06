@@ -1,9 +1,11 @@
 FROM tensorflow/tensorflow:2.1.0-gpu-py3
 
+COPY . /app
+WORKDIR /app
+
 RUN apt-get update && \
     apt-get install -y wget unzip language-pack-ja mecab libmecab-dev mecab-ipadic-utf8 jq
 
-RUN pip install jupyter==1.0.0 papermill==2.1.1 transformers==2.9.0 attrdict==2.0.1 fire==0.3.1 pyyaml==5.3.1 responder==2.0.5
+RUN pip install -e ./
 
-# Create cache directory used by Black
-RUN mkdir -p /root/.cache/black/19.10b0
+WORKDIR /work
