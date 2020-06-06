@@ -5,14 +5,10 @@ import tensorflow as tf
 import tensorflow.keras as keras
 import os
 import yaml
+import random
 
 
 def set_seed(seed):
-    import numpy as np
-    import tensorflow as tf
-    import random
-    import os
-
     os.environ['PYTHONHASHSEED'] = '0'
     np.random.seed(seed)
     random.seed(seed)
@@ -95,11 +91,7 @@ class WarmupScheduler(tf.keras.callbacks.Callback):
     
 def train(params, tokenizer, x_train, y_train, x_valid, y_valid):
     # Prepare model directory and path
-    model_save_dir = os.path.join(params.output_dir, "model")
-    if not os.path.exists(model_save_dir):
-        os.mkdir(model_save_dir)
-    checkpoint_model_path = os.path.join(params.output_dir, "ckpt.h5")
-    tensorboard_output_dir = os.path.join(params.output_dir, "tensorboard")
+    os.makedirs(params.output.model_dir, exist_ok=True)
 
     # Compile model
     # Set from_logits=True because TFGPT2LMHeadModel returns the logits (before Softmax)
@@ -134,12 +126,12 @@ def train(params, tokenizer, x_train, y_train, x_valid, y_valid):
             restore_best_weights=False
         ),
         keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_model_path,
+            filepath=params.output.checkpoint_path,
             monitor="val_loss",
             save_best_only=True,
         ),
         keras.callbacks.TensorBoard(
-            log_dir=tensorboard_output_dir,
+            log_dir=params.output.tensorboard_dir,
             update_freq="batch",
             # To automatically refresh Tensorboard , set profile_batch=0
             # See more details here https://github.com/tensorflow/tensorboard/issues/2412
@@ -149,8 +141,7 @@ def train(params, tokenizer, x_train, y_train, x_valid, y_valid):
     ]
     
     # Train model
-    tokenizer.save_pretrained(model_save_dir)   
-    _ = model.fit(
+    model.fit(
         {"input_ids": x_train},
         y_train,
         epochs=params.num_epochs,
@@ -160,8 +151,8 @@ def train(params, tokenizer, x_train, y_train, x_valid, y_valid):
     )
 
     # Restore the best model and save it as pretrained model format
-    model.load_weights(checkpoint_model_path)
-    model.save_pretrained(model_save_dir)
+    model.load_weights(params.output.checkpoint_path)
+    model.save_pretrained(params.output.model_dir)
 
     # Save model with best performance
     return model
@@ -173,25 +164,32 @@ def main(config):
 
     set_seed(_params.seed)
 
-    _train_texts = load_dataset(_params.data_dir + "/train.txt")
-    _valid_texts = load_dataset(_params.data_dir + "/valid.txt")
-    _test_texts = load_dataset(_params.data_dir + "/test.txt")
+    _train_texts = load_dataset(_params.input.train_file)
+    _valid_texts = load_dataset(_params.input.valid_file)
 
-    _tokenizer = build_tokenizer(_params.tokenizer_model_name)
-    
-    _x_train, _y_train = build_data(_tokenizer, _train_texts, _params.block_size)
-    _x_valid, _y_valid = build_data(_tokenizer, _valid_texts, _params.block_size)
-    _x_test, _y_test = build_data(_tokenizer, _valid_texts, _params.block_size)
+    # Build and save tokenizer
+    tokenizer = build_tokenizer(_params.tokenizer_model_name)
+    os.makedirs(_params.output.tokenizer_dir, exist_ok=True)
+    # To be able to use AutoTokenizer when loading afterward,
+    # the corresponded AutoConfig should be saved.
+    # This is because the tokenizer is for BERT, which is
+    # different from our actual model GPT2.
+    # See more details about this issue here
+    #   https://github.com/huggingface/transformers/issues/4197
+    transformers.AutoConfig.from_pretrained(_params.tokenizer_model_name).save_pretrained(_params.output.tokenizer_dir)
+    tokenizer.save_pretrained(_params.output.tokenizer_dir)
+
+    # Build data
+    _x_train, _y_train = build_data(tokenizer, _train_texts, _params.block_size)
+    _x_valid, _y_valid = build_data(tokenizer, _valid_texts, _params.block_size)
+    _x_test, _y_test = build_data(tokenizer, _valid_texts, _params.block_size)
 
     # Train model
-    _val_best_model = train(_params, _tokenizer, _x_train, _y_train, _x_valid, _y_valid)
+    _val_best_model = train(_params, tokenizer, _x_train, _y_train, _x_valid, _y_valid)
     _val_best_model.summary()
 
     # Evaluate best model with validation set
     _val_best_model.evaluate(_x_valid, _y_valid)
-
-    # Evaluate best model with test set
-    _val_best_model.evaluate(_x_test, _y_test)
 
 
 if __name__ == "__main__":

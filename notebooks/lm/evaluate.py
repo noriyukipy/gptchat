@@ -1,6 +1,5 @@
 import yaml
 import attrdict
-import os
 import transformers
 from train import set_seed
 from train import load_dataset
@@ -8,17 +7,14 @@ from train import build_data
 import tensorflow.keras as keras
 
 
-def main(config):
+def main(test_file, config):
     params = attrdict.AttrDict(yaml.load(open(config)))
     print(params)
     set_seed(params.seed)
 
-    model_dir = os.path.join(params.output_dir, "model")
-
-    tokenizer = transformers.BertJapaneseTokenizer.from_pretrained(model_dir)
-    model = transformers.TFAutoModelWithLMHead.from_pretrained(model_dir)
-
-    test_texts = load_dataset(params.data_dir + "/test.txt")
+    tokenizer = transformers.AutoTokenizer.from_pretrained(params.output.tokenizer_dir)
+    model = transformers.TFAutoModelWithLMHead.from_pretrained(params.output.model_dir)
+    test_texts = load_dataset(test_file)
 
     x_test, y_test = build_data(tokenizer, test_texts, params.block_size)
 

@@ -53,8 +53,8 @@ class LMGenerator:
 
 
 def build_api(model_dir, params):
-    tokenizer = transformers.BertJapaneseTokenizer.from_pretrained(model_dir)
-    model = transformers.TFAutoModelWithLMHead.from_pretrained(model_dir)
+    tokenizer = transformers.AutoTokenizer.from_pretrained(params.output.tokenizer_dir)
+    model = transformers.TFAutoModelWithLMHead.from_pretrained(params.output.model_dir)
 
     generator = LMGenerator(model, tokenizer, params)
     handler = APIHandler(generator=generator)
