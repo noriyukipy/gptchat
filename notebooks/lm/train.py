@@ -1,18 +1,10 @@
-import attrdict
+from gptchat.lib import set_seed
+from gptchat.lib import WarmupScheduler
+from gptchat.lib import load_config
 import transformers
 import numpy as np
-import tensorflow as tf
 import tensorflow.keras as keras
 import os
-import yaml
-import random
-
-
-def set_seed(seed):
-    os.environ['PYTHONHASHSEED'] = '0'
-    np.random.seed(seed)
-    random.seed(seed)
-    tf.random.set_seed(seed)
 
 
 def load_dataset(path):
@@ -57,38 +49,8 @@ def build_model(tokenizer, params):
     return model
 
 
-# Read https://github.com/huggingface/transformers/issues/2169
-# to know more about how to train TFGPT2LMHead
-
-
-class WarmupScheduler(tf.keras.callbacks.Callback):
-    def __init__(self, warmup_steps, learning_rate):
-        super().__init__()
-
-        self._warmup_steps = warmup_steps
-        self._learning_rate = learning_rate
-
-        # The argument passed to on_train_batch_begin
-        # is resetted every epoch.
-        # self._total_steps is used to keep total step
-        self._total_steps = 0
-
-    def on_train_batch_begin(self, step, logs=None):
-        self._total_steps += 1
-        step = self._total_steps
-
-        if step > self._warmup_steps:
-            return
-
-        # Get the current learning rate from model's optimizer.
-        lr = float(tf.keras.backend.get_value(self.model.optimizer.lr))
-        # Call schedule function to get the scheduled learning rate.
-        scheduled_lr = self._learning_rate * (step / self._warmup_steps)
-        # Set the value back to the optimizer before this epoch starts
-        tf.keras.backend.set_value(self.model.optimizer.lr, scheduled_lr)
-        #print('\nStep {}: lr is schedulerd {:.4e} -> {:.4e}]'.format(step, lr, float(tf.keras.backend.get_value(self.model.optimizer.lr))))
-
-    
+# To know more about how to train TFGPT2LMHead, read
+#   https://github.com/huggingface/transformers/issues/2169
 def train(params, tokenizer, x_train, y_train, x_valid, y_valid):
     # Prepare model directory and path
     os.makedirs(params.output.model_dir, exist_ok=True)
@@ -159,7 +121,7 @@ def train(params, tokenizer, x_train, y_train, x_valid, y_valid):
 
 
 def main(config):
-    _params = attrdict.AttrDict(yaml.load(open(config)))
+    _params = load_config(config)
     print(_params)
 
     set_seed(_params.seed)

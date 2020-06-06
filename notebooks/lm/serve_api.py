@@ -1,8 +1,7 @@
+from gptchat.lib import load_config
 import transformers
 import os
 from train import set_seed
-import yaml
-import attrdict
 import responder
 
 
@@ -65,7 +64,7 @@ def build_api(model_dir, params):
 
 
 def main(config, address=None, port=None):
-    params = attrdict.AttrDict(yaml.load(open(config)))
+    params = load_config(config)
     print(params)
     set_seed(params.seed)
 

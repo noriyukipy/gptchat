@@ -1,5 +1,4 @@
-import yaml
-import attrdict
+from gptchat.lib import load_config
 import transformers
 from train import set_seed
 from train import load_dataset
@@ -8,7 +7,7 @@ import tensorflow.keras as keras
 
 
 def main(test_file, config):
-    params = attrdict.AttrDict(yaml.load(open(config)))
+    params = load_config(config)
     print(params)
     set_seed(params.seed)
 
