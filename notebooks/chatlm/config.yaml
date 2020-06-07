@@ -1,0 +1,30 @@
+# Path of input and output resources
+input:
+    train_file: chatlm/data/train.tsv
+    valid_file: chatlm/data/valid.tsv
+    pretrained_tokenizer_dir: lm/output/tokenizer
+    pretrained_model_dir: lm/output/model
+output:
+    model_dir:       chatlm/output/model
+    tokenizer_dir:   chatlm/output/tokenizer
+    tensorboard_dir: chatlm/output/tensorboard
+    checkpoint_path: chatlm/output/ckpt.h5
+
+# [Dataset Config]
+max_length: 256
+
+# [Training Parameters]
+seed: 1234
+num_epochs: 10
+batch_size: 2  # This parameter should be equal to n_ctx
+learning_rate: 0.00005
+max_grad_norm: 1.0
+warmup_rate: 0.1
+patience: 1
+
+# [Generation Config]
+do_sample: True
+top_k: 50
+top_p: 0.9
+bad_words:
+    - "[UNK]"

@@ -32,7 +32,7 @@ def build_data(tokenizer, texts, block_size):
         sample = ids[idx:idx+block_size]
         inputs.append(sample[:-1])
         labels.append(sample[1:])
-    return np.array(inputs), np.array(labels)
+    return {"input_ids": np.array(inputs)}, np.array(labels)
 
 
 def build_model(tokenizer, params):

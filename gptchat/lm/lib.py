@@ -1,6 +1,28 @@
 from gptchat.lib import WarmupScheduler
 import tensorflow.keras as keras
+import tensorflow as tf
 import os
+
+
+def cross_entropy_loss_with_padding(num_labels, pad_token_id):
+    loss_fct = tf.keras.losses.SparseCategoricalCrossentropy(
+        from_logits=True,
+        reduction=tf.keras.losses.Reduction.NONE
+    )
+
+    def loss(y_true, y_pred):
+        input_mask = tf.not_equal(y_true, pad_token_id)
+        active_loss = tf.reshape(input_mask, (-1,))
+        logits = tf.reshape(y_pred, (-1, num_labels))
+        active_logits = tf.boolean_mask(logits, active_loss)
+
+        train_labels = tf.reshape(y_true, (-1,))
+        active_labels = tf.boolean_mask(train_labels, active_loss)
+        cross_entropy = loss_fct(active_labels, active_logits)
+
+        return cross_entropy
+
+    return loss
 
 
 # To know more about how to train TFGPT2LMHead, read
@@ -11,10 +33,14 @@ def train(params, model, tokenizer, x_train, y_train, x_valid, y_valid):
 
     # Compile model
     # Set from_logits=True because TFGPT2LMHeadModel returns the logits (before Softmax)
-    loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    # loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    loss = cross_entropy_loss_with_padding(
+        num_labels=len(tokenizer),
+        pad_token_id=tokenizer.pad_token_id,
+    )
 
     # Create optimizer
-    total_steps = int(len(x_train) / params.batch_size) * params.num_epochs
+    total_steps = int(len(y_train) / params.batch_size) * params.num_epochs
     optimizer = keras.optimizers.Adam(
         lr=params.learning_rate,
         beta_1=0.9,
@@ -57,12 +83,12 @@ def train(params, model, tokenizer, x_train, y_train, x_valid, y_valid):
     
     # Train model
     model.fit(
-        {"input_ids": x_train},
+        x_train,
         y_train,
         epochs=params.num_epochs,
         batch_size=params.batch_size,
         callbacks=callbacks_list,
-        validation_data=({"input_ids": x_valid}, y_valid),
+        validation_data=(x_valid, y_valid),
     )
 
     # Restore the best model and save it as pretrained model format
