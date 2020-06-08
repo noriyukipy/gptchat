@@ -5,6 +5,8 @@ import transformers
 import numpy as np
 import os
 import collections
+import tensorflow as tf
+import math
 
 
 Sample = collections.namedtuple("Sample", ["context", "response"])
@@ -52,6 +54,27 @@ def encode_plus(tokenizer, context,
     }
 
     return tensor
+
+
+class Dataset(tf.keras.utils.Sequence):
+    def __init__(self, tokenizer, samples, max_length, batch_size):
+        self._tokenizer = tokenizer
+        self._samples = samples
+        self._max_length = max_length
+        self._batch_size = batch_size
+
+    def __getitem__(self, idx):
+        samples = [
+            self._samples[i] for i in
+            range(
+                idx*self._batch_size,
+                min((idx+1)*self._batch_size, len(self._samples))
+            )
+        ]
+        return build_data(self._tokenizer, samples, self._max_length)
+
+    def __len__(self):
+        return math.ceil(len(self._samples) / self._batch_size)
 
 
 def build_data(tokenizer, samples, max_length):
@@ -114,13 +137,16 @@ def main(config):
     x_train, y_train = build_data(tokenizer, train_texts, params.max_length)
     x_valid, y_valid = build_data(tokenizer, valid_texts, params.max_length)
 
+    train_dataset = Dataset(tokenizer, train_texts, params.max_length, params.batch_size)
+    valid_dataset = Dataset(tokenizer, train_texts, params.max_length, params.batch_size)
+
     # Train model
     model = transformers.TFGPT2LMHeadModel.from_pretrained(params.input.pretrained_model_dir)
-    val_best_model = train(params, model, tokenizer, x_train, y_train, x_valid, y_valid)
+    val_best_model = train(params, model, tokenizer, train_dataset, valid_dataset)
     val_best_model.summary()
 
     # Evaluate best model with validation set
-    val_best_model.evaluate(x_valid, y_valid)
+    val_best_model.evaluate(valid_dataset)
 
 
 if __name__ == "__main__":

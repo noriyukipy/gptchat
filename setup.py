@@ -5,7 +5,7 @@ setuptools.setup(
     name="gptchat",
     packages=setuptools.find_packages(),
     install_requires=[
-        "transformers==2.9.0",
+        "transformers==2.11.0",
         "mecab-python3==0.996.2",
         "fire==0.2.1",
         "responder==2.0.5",

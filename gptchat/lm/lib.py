@@ -27,7 +27,7 @@ def cross_entropy_loss_with_padding(num_labels, pad_token_id):
 
 # To know more about how to train TFGPT2LMHead, read
 #   https://github.com/huggingface/transformers/issues/2169
-def train(params, model, tokenizer, x_train, y_train, x_valid, y_valid):
+def train(params, model, tokenizer, train_dataset, valid_dataset):
     # Prepare model directory and path
     os.makedirs(params.output.model_dir, exist_ok=True)
 
@@ -40,7 +40,7 @@ def train(params, model, tokenizer, x_train, y_train, x_valid, y_valid):
     )
 
     # Create optimizer
-    total_steps = int(len(y_train) / params.batch_size) * params.num_epochs
+    total_steps = len(train_dataset) * params.num_epochs
     optimizer = keras.optimizers.Adam(
         lr=params.learning_rate,
         beta_1=0.9,
@@ -52,10 +52,10 @@ def train(params, model, tokenizer, x_train, y_train, x_valid, y_valid):
     model.compile(
         optimizer=optimizer,
         loss=[loss, *[None] * model.config.n_layer],
-        metrics=[
-            keras.metrics.SparseCategoricalCrossentropy(from_logits=True),
-            keras.metrics.SparseCategoricalAccuracy(),
-        ],
+        # metrics=[
+        #     keras.metrics.SparseCategoricalCrossentropy(from_logits=True),
+        #     keras.metrics.SparseCategoricalAccuracy(),
+        # ],
     )
     
     callbacks_list = [
@@ -83,12 +83,10 @@ def train(params, model, tokenizer, x_train, y_train, x_valid, y_valid):
     
     # Train model
     model.fit(
-        x_train,
-        y_train,
+        train_dataset,
         epochs=params.num_epochs,
-        batch_size=params.batch_size,
         callbacks=callbacks_list,
-        validation_data=(x_valid, y_valid),
+        validation_data=valid_dataset,
     )
 
     # Restore the best model and save it as pretrained model format
