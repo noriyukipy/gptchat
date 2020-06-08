@@ -134,9 +134,6 @@ def main(config):
     tokenizer.save_pretrained(params.output.tokenizer_dir)
 
     # Build data
-    x_train, y_train = build_data(tokenizer, train_texts, params.max_length)
-    x_valid, y_valid = build_data(tokenizer, valid_texts, params.max_length)
-
     train_dataset = Dataset(tokenizer, train_texts, params.max_length, params.batch_size)
     valid_dataset = Dataset(tokenizer, train_texts, params.max_length, params.batch_size)
 
