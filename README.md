@@ -57,7 +57,8 @@ To distinguish context and response, [token_type_id](https://huggingface.co/tran
 |                | 1       | 2       | 3     | 5       | 6     |
 | ---            | ---     | ---     | ---   | ---     | ---   |
 | Token          | Good    | morning | [SEP] | Hi      | [CLS] |
-| Token Type IDs | [CTX]   | [CTX]   | [RES] | [RES]   | [RES] |
+| Token Type IDs | 0       | 0       | 1     | 1       | 1     |
+| Attention mask | 1       | 1       | 1     | 1       | 1     |
 
 This model is trained with [CrossEntropyLoss](https://pytorch.org/docs/stable/nn.html#crossentropyloss) of the only response tokens.
 
