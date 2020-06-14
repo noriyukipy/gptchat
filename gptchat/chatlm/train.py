@@ -41,7 +41,7 @@ def encode_plus(tokenizer, context,
         token_type_ids = token_type_ids[:max_length]
         attention_mask = attention_mask[:max_length]
 
-    if len(input_ids) < max_length:
+    if pad_to_max_length and len(input_ids) < max_length:
         diff_len = max_length - len(input_ids)
         input_ids += [tokenizer.pad_token_id] * diff_len
         token_type_ids += [tokenizer.pad_token_id] * diff_len
