@@ -5,6 +5,8 @@ import tensorflow as tf
 import tensorflow.keras as keras
 import attrdict
 import yaml
+from fastapi import FastAPI
+from pydantic import BaseModel
 
 
 def set_seed(seed):
@@ -44,3 +46,20 @@ class WarmupScheduler(keras.callbacks.Callback):
         # Set the value back to the optimizer before this epoch starts
         keras.backend.set_value(self.model.optimizer.lr, scheduled_lr)
         #print('\nStep {}: lr is schedulerd {:.4e} -> {:.4e}]'.format(step, lr, float(tf.keras.backend.get_value(self.model.optimizer.lr))))
+
+
+class Request(BaseModel):
+    context: str
+    response: str = None
+
+
+def build_api(handler):
+    app = FastAPI(
+        title="GPTChat",
+        description="",
+        version="0.0.0",
+
+    )
+    app.add_api_route("/generate", handler.generate, methods=["POST"])
+    return app
+

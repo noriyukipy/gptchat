@@ -1,15 +1,10 @@
 from gptchat.lib import load_config
 from gptchat.lib import set_seed
+from gptchat.lib import Request
+from gptchat.lib import build_api
 from .lib import generate
-from fastapi import FastAPI
-from pydantic import BaseModel
 import transformers
 import uvicorn
-
-
-class Request(BaseModel):
-    context: str
-    response: str = None
 
 
 class Handler:
@@ -28,18 +23,10 @@ class Handler:
             max_length=30,
             text=req.context
         )
-        return {"response": response}
-
-
-def build_api(handler):
-    app = FastAPI(
-        title="GPTChat",
-        description="",
-        version="0.0.0",
-
-    )
-    app.add_api_route("/generate", handler.generate, methods=["POST"])
-    return app
+        return {
+            "context": req.context,
+            "response": response
+        }
 
 
 def main(config, host=None, port=None):

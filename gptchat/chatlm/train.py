@@ -135,7 +135,7 @@ def main(config):
 
     # Build data
     train_dataset = Dataset(tokenizer, train_texts, params.max_length, params.batch_size)
-    valid_dataset = Dataset(tokenizer, train_texts, params.max_length, params.batch_size)
+    valid_dataset = Dataset(tokenizer, valid_texts, params.max_length, params.batch_size)
 
     # Train model
     model = transformers.TFGPT2LMHeadModel.from_pretrained(params.input.pretrained_model_dir)

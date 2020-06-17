@@ -1,9 +1,11 @@
 from gptchat.lib import set_seed
 from gptchat.lib import load_config
 from gptchat.lm.lib import train
+import tensorflow as tf
 import transformers
 import numpy as np
 import os
+import math
 
 
 def load_dataset(path):
@@ -18,21 +20,37 @@ def build_tokenizer(tokenizer_model_name):
     return tokenizer
 
 
-def build_data(tokenizer, texts, block_size):
-    ids = []
-    for text in texts:
-        # Set add_special_tokens=False
-        # not to add additional special tokens.
-        tokens = tokenizer.tokenize(text)
-        ids.extend(tokenizer.convert_tokens_to_ids(tokens))
+class Dataset(tf.keras.utils.Sequence):
+    def __init__(self, tokenizer, texts, block_size, batch_size):
+        ids = []
+        for text in texts:
+            # Set add_special_tokens=False
+            # not to add additional special tokens.
+            tokens = tokenizer.tokenize(text)
+            ids.extend(tokenizer.convert_tokens_to_ids(tokens))
 
-    inputs = []
-    labels = []
-    for idx in range(0, len(ids)-block_size+1, block_size):
-        sample = ids[idx:idx+block_size]
-        inputs.append(sample[:-1])
-        labels.append(sample[1:])
-    return {"input_ids": np.array(inputs)}, np.array(labels)
+        samples = []
+        for idx in range(0, len(ids)-block_size+1, block_size):
+            sample = ids[idx:idx+block_size]
+            samples.append(sample)
+
+        # Define attributes
+        self._batch_size = batch_size
+        self._samples = samples
+
+    def __getitem__(self, idx):
+        inputs = []
+        labels = []
+
+        for i in range(idx*self._batch_size, min((idx+1)*self._batch_size, len(self._samples))):
+            sample = self._samples[i]
+            inputs.append(sample[:-1])
+            labels.append(sample[1:])
+
+        return {"input_ids": np.array(inputs)}, np.array(labels)
+
+    def __len__(self):
+        return math.ceil(len(self._samples) / self._batch_size)
 
 
 def build_model(tokenizer, params):
@@ -49,38 +67,37 @@ def build_model(tokenizer, params):
 
 
 def main(config):
-    _params = load_config(config)
-    print(_params)
+    params = load_config(config)
+    print(params)
 
-    set_seed(_params.seed)
+    set_seed(params.seed)
 
-    _train_texts = load_dataset(_params.input.train_file)
-    _valid_texts = load_dataset(_params.input.valid_file)
+    train_texts = load_dataset(params.input.train_file)
+    valid_texts = load_dataset(params.input.valid_file)
 
     # Build and save tokenizer
-    tokenizer = build_tokenizer(_params.tokenizer_model_name)
-    os.makedirs(_params.output.tokenizer_dir, exist_ok=True)
+    tokenizer = build_tokenizer(params.tokenizer_model_name)
+    os.makedirs(params.output.tokenizer_dir, exist_ok=True)
     # To be able to use AutoTokenizer when loading afterward,
     # the corresponded AutoConfig should be saved.
     # This is because the tokenizer is for BERT, which is
     # different from our actual model GPT2.
     # See more details about this issue here
     #   https://github.com/huggingface/transformers/issues/4197
-    transformers.AutoConfig.from_pretrained(_params.tokenizer_model_name).save_pretrained(_params.output.tokenizer_dir)
-    tokenizer.save_pretrained(_params.output.tokenizer_dir)
+    transformers.AutoConfig.from_pretrained(params.tokenizer_model_name).save_pretrained(params.output.tokenizer_dir)
+    tokenizer.save_pretrained(params.output.tokenizer_dir)
 
     # Build data
-    _x_train, _y_train = build_data(tokenizer, _train_texts, _params.block_size)
-    _x_valid, _y_valid = build_data(tokenizer, _valid_texts, _params.block_size)
-    _x_test, _y_test = build_data(tokenizer, _valid_texts, _params.block_size)
+    train_dataset = Dataset(tokenizer, train_texts, params.block_size, params.batch_size)
+    valid_dataset = Dataset(tokenizer, valid_texts, params.block_size, params.batch_size)
 
     # Train model
-    model = build_model(tokenizer, _params)
-    _val_best_model = train(_params, model, tokenizer, _x_train, _y_train, _x_valid, _y_valid)
-    _val_best_model.summary()
+    model = build_model(tokenizer, params)
+    val_best_model = train(params, model, tokenizer, train_dataset, valid_dataset)
+    val_best_model.summary()
 
     # Evaluate best model with validation set
-    _val_best_model.evaluate(_x_valid, _y_valid)
+    val_best_model.evaluate(valid_dataset)
 
 
 if __name__ == "__main__":
