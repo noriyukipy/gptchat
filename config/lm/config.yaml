@@ -1,12 +1,12 @@
 # Path of input and output resources
 input:
-    train_file: data/train.txt
-    valid_file: data/valid.txt
+    train_file: lm/data/train.txt
+    valid_file: lm/data/valid.txt
 output:
-    model_dir:       output/model
-    tokenizer_dir:   output/tokenizer
-    tensorboard_dir: output/tensorboard
-    checkpoint_path: output/ckpt.h5
+    model_dir:       lm/output/model
+    tokenizer_dir:   lm/output/tokenizer
+    tensorboard_dir: lm/output/tensorboard
+    checkpoint_path: lm/output/ckpt.h5
 
 # [Model Parameters]
 # For English tokenizer, specify "gpt2"
