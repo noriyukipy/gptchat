@@ -125,3 +125,8 @@ $ docker container run -v $(pwd):/work -w /work -p 6006:6006 --rm gptchat_tf ten
 ```sh
 $ docker image build -t gptchat_tf -f Dockerfile.tf .
 ```
+
+```sh
+$ docker container run -v $(pwd)/config:/work -w /work --rm -it gptchat_tf python -m gptchat.lm.train --config=lm/config.yaml
+$ docker container run -v $(pwd)/config:/work -w /work -p 8000:8000 --rm -it gptchat_tf python -m gptchat.lm.serve_api --config=lm/config.yaml --host=0.0.0.0 --port=8000
+```
