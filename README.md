@@ -1,6 +1,6 @@
 # GPTChat
 
-GPTChat provides conversation modeling CLI based on GPT-2 for Japanese.
+GPTChat provides conversation modeling CLI based on GPT-2.
 
 This repository uses GPT-2 models provided by powerful and exciting OSS [🤗 Transformers](https://github.com/huggingface/transformers) by HuggingFace.
 
@@ -14,37 +14,26 @@ $ cd gptchat
 $ docker image build -t gptchat .
 ```
 
-## Pretrained Model
+Change directory to working directory.
+
+```sh
+$ cd config
+```
+
+## Train LM Model
 
 ### Preparation of Dataset
 
-Before training, prepare Japanese language corpus such as Wikipedia.
+Before training, prepare language corpus such as Wikipedia.
 
 ### Training
 
-Run `notebooks/gpt/train.ipynb` with [papermill](https://github.com/nteract/papermill).
-Papermill is useful for recording your specified parameters and environments.
-
 ```sh
-$ docker container run -v $(pwd):/work --gpus all --rm gptchat papermill notebooks/gpt/train.ipynb notebooks/gpt/output/output.ipynb -p n_ctx 512 -p block_size 512 -p data_dir notebooks/gpt/data -p output_dir notebooks/gpt/output
+$ docker container run -v $(pwd)/config:/work -w /work --rm -it gptchat_tf python -m gptchat.lm.train --config=lm/config.yaml
 ```
 
-To check all the available argument, see the [notebook](notebooks/gpt/train.ipynb).
 
-After finish training, the trained model is in the `${output_dir}/model`
-
-
-```sh
-$ ls -1 notebooks/gpt/output/model/
-added_tokens.json
-config.json
-pytorch_model.bin
-special_tokens_map.json
-tokenizer_config.json
-vocab.txt
-```
-
-## ChatLM Model
+## Train ChatLM Model
 
 GPTChat provides **ChatLM** Model.
 The model is a sequence to sequence model by fine-tuning pretrained GPT-2 to generate a **response** from a **context** given by a user.
@@ -69,46 +58,10 @@ First column is a context, and the second is a response to the first column.
 
 ### Training
 
-Run `notebooks/chatlm/train.ipynb` with [papermill](https://github.com/nteract/papermill).
-
-Train the model with `
+Train the model with
 
 ```sh
-$ docker container run -v $(pwd):/work --gpus all --rm gptchat papermill notebooks/chatlm/train.ipynb notebooks/chatlm/output/output.ipynb -p pretrained_dir notebooks/gpt/output/model -p data_dir notebooks/chatlm/data -p output_dir notebooks/chatlm/output -p batch_size 32
-```
-
-To check all the available argument, see the [notebook](notebooks/chatlm/train.ipynb).
-
-After finish training, the trained model is in the `${output_dir}/model`
-
-```sh
-$ ls -1 notebooks/chatlm/output/model/
-added_tokens.json
-config.json
-pytorch_model.bin
-special_tokens_map.json
-tokenizer_config.json
-vocab.txt
-```
-
-### Response Generation
-
-Run `gptchat.cmd.serve_chatlm_api` to serve API server to generate response.
-
-```sh
-$ docker container run -v $(pwd):/work -p 8000:8000 --rm gptchat python -m gptchat.cmd.serve_chatlm_api --model_dir=notebooks/chatlm/output/chatlm/model --address=0.0.0.0 --port=8000 --top_p=0.95 --top_k=50 --max_len=20 --num_cands=3
-```
-
-Then you can give request to the server.
-
-```sh
-$ curl localhost:8000/chat -d '{"context": "これで完成！"}' -H"content-type:applicaiton/json" | jq
-{
-  "request": {
-    "context": "これで完成！"
-  },
-  "response": "お疲れ様です!"
-}
+$ docker container run -v $(pwd)/notebooks:/work -w /work --rm -it gptchat_tf python -m gptchat.chatlm.train --config=chatlm/config.yaml
 ```
 
 ## Logs
@@ -119,12 +72,7 @@ To monitor training progress, use tensorboard. Go to the output directory, and t
 $ docker container run -v $(pwd):/work -w /work -p 6006:6006 --rm gptchat_tf tensorboard --logdir . --host=0.0.0.0
 ```
 
-
-## TF
-
-```sh
-$ docker image build -t gptchat_tf -f Dockerfile.tf .
-```
+## Response Generation
 
 ```sh
 $ docker container run -v $(pwd)/config:/work -w /work --rm -it gptchat_tf python -m gptchat.lm.train --config=lm/config.yaml
