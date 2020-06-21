@@ -16,7 +16,7 @@ max_length: 256
 # [Training Parameters]
 seed: 1234
 num_epochs: 10
-batch_size: 2  # This parameter should be equal to n_ctx
+batch_size: 16
 learning_rate: 0.00005
 max_grad_norm: 1.0
 warmup_rate: 0.1
