@@ -57,7 +57,8 @@ To distinguish context and response, [token_type_id](https://huggingface.co/tran
 |                | 1       | 2       | 3     | 5       | 6     |
 | ---            | ---     | ---     | ---   | ---     | ---   |
 | Token          | Good    | morning | [SEP] | Hi      | [CLS] |
-| Token Type IDs | [CTX]   | [CTX]   | [RES] | [RES]   | [RES] |
+| Token Type IDs | 0       | 0       | 1     | 1       | 1     |
+| Attention mask | 1       | 1       | 1     | 1       | 1     |
 
 This model is trained with [CrossEntropyLoss](https://pytorch.org/docs/stable/nn.html#crossentropyloss) of the only response tokens.
 
@@ -108,4 +109,24 @@ $ curl localhost:8000/chat -d '{"context": "これで完成！"}' -H"content-typ
   },
   "response": "お疲れ様です!"
 }
+```
+
+## Logs
+
+To monitor training progress, use tensorboard. Go to the output directory, and then run tensorboard.
+
+```sh
+$ docker container run -v $(pwd):/work -w /work -p 6006:6006 --rm gptchat_tf tensorboard --logdir . --host=0.0.0.0
+```
+
+
+## TF
+
+```sh
+$ docker image build -t gptchat_tf -f Dockerfile.tf .
+```
+
+```sh
+$ docker container run -v $(pwd)/config:/work -w /work --rm -it gptchat_tf python -m gptchat.lm.train --config=lm/config.yaml
+$ docker container run -v $(pwd)/config:/work -w /work -p 8000:8000 --rm -it gptchat_tf python -m gptchat.lm.serve_api --config=lm/config.yaml --host=0.0.0.0 --port=8000
 ```
