@@ -6,7 +6,7 @@ This repository uses GPT-2 models provided by powerful and exciting OSS [🤗 Tr
 
 ## Installation
 
-Build Docker image.
+Build Docker imageb.py.
 
 ```sh
 $ git clone https://github.com/noriyukipy/gptchat
@@ -29,9 +29,14 @@ Before training, prepare language corpus such as Wikipedia.
 ### Training
 
 ```sh
-$ docker container run -v $(pwd)/config:/work -w /work --rm -it gptchat_tf python -m gptchat.lm.train --config=lm/config.yaml
+$ docker container run --gpus all -v $(pwd):/work -w /work --rm -it gptchat_tf python -m gptchat.lm.train --config=lm/config.yaml
 ```
 
+### Serve API
+
+```sh
+$ docker container run -v $(pwd):/work -w /work -p 8000:8000 --rm -it gptchat_tf python -m gptchat.lm.serve_api --config=lm/config.yaml --host=0.0.0.0 --port=8000
+```
 
 ## Train ChatLM Model
 
@@ -61,7 +66,13 @@ First column is a context, and the second is a response to the first column.
 Train the model with
 
 ```sh
-$ docker container run -v $(pwd)/notebooks:/work -w /work --rm -it gptchat_tf python -m gptchat.chatlm.train --config=chatlm/config.yaml
+$ docker container run --gpus all -v $(pwd):/work -w /work --rm -it gptchat_tf python -m gptchat.chatlm.train --config=chatlm/config.yaml
+```
+
+### Serve API
+
+```sh
+$ docker container run -v $(pwd):/work -w /work -p 8000:8000 --rm -it gptchat_tf python -m gptchat.chatlm.serve_api --config=chatlm/config.yaml --host=0.0.0.0 --port=8000
 ```
 
 ## Logs
