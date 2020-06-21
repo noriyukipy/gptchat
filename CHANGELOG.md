@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Removed papermill dependency; adopted CLI instead with YAML config file
+- Removed papermill dependency; adopted CLI with YAML config file instead of papermill
 
 ## [v0.2.0] - 2020/04/29
 
