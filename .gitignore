@@ -1,5 +1,1 @@
 *.egg-info/
-notebooks/*/output/
-notebooks/*/data_sample/
-.ipynb_checkpoints/
-
