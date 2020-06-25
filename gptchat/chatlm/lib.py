@@ -91,8 +91,8 @@ def clean_output(decoded_str, sep_token, cls_token):
     left_idx = cleaned_str.find(sep_token)
     cleaned_str = cleaned_str[left_idx+len(sep_token):]
 
-    right_idx = decoded_str.find(cls_token)
+    right_idx = cleaned_str.find(cls_token)
     if right_idx != -1:
-        cleaned_str = cleaned_str[:right_idx-len(cls_token)]
+        cleaned_str = cleaned_str[:right_idx]
 
     return cleaned_str
