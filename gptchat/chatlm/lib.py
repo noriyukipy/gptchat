@@ -52,7 +52,14 @@ def generate(model, tokenizer, top_k, top_p, max_length, context, response, bad_
         if next_token[0] == tokenizer.cls_token_id:
             break
 
-    return tokenizer.decode(model_input["input_ids"])
+    model_output = tokenizer.decode(model_input["input_ids"])
+    cleaned_output = clean_output(
+        decoded_str=model_output,
+        sep_token=tokenizer.sep_token,
+        cls_token=tokenizer.cls_token,
+    )
+
+    return cleaned_output, model_output
 
 
 def stop_bad_words(tokenizer, prev_input_ids, bad_words_ids, next_token_logits):
@@ -76,3 +83,16 @@ def stop_bad_words(tokenizer, prev_input_ids, bad_words_ids, next_token_logits):
         -float("inf")
     )
     return next_token_logits
+
+
+def clean_output(decoded_str, sep_token, cls_token):
+    cleaned_str = decoded_str.replace(" ", "")
+
+    left_idx = cleaned_str.find(sep_token)
+    cleaned_str = cleaned_str[left_idx+len(sep_token):]
+
+    right_idx = decoded_str.find(cls_token)
+    if right_idx != -1:
+        cleaned_str = cleaned_str[:right_idx+len(cls_token)]
+
+    return cleaned_str

@@ -53,6 +53,16 @@ class Request(BaseModel):
     response: str = None
 
 
+class ModelInfo(BaseModel):
+    output: str
+
+
+class Response(BaseModel):
+    response: str
+    request: Request
+    model_info: ModelInfo
+
+
 def build_api(handler):
     app = FastAPI(
         title="GPTChat",

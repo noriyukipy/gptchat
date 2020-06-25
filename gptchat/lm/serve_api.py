@@ -1,6 +1,8 @@
 from gptchat.lib import load_config
 from gptchat.lib import set_seed
 from gptchat.lib import Request
+from gptchat.lib import Response
+from gptchat.lib import ModelInfo
 from gptchat.lib import build_api
 import transformers
 import uvicorn
@@ -33,10 +35,14 @@ class Handler:
         )
         response = self._tokenizer.decode(output[0])
 
-        return {
-            "context": req.context,
-            "response": response
-        }
+        # Clean up response
+        cleaned_response = response.replace(" ", "")
+
+        return Response(
+            request=req,
+            response=cleaned_response,
+            model_info=ModelInfo(output=response)
+        )
 
 
 def main(config, host=None, port=None):
