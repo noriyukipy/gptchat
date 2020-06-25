@@ -7,11 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v0.3.1] - 2020/06/25
+
 ### Added
 
-- Implement bad_words option to generator of ChatLM
+- Implement bad_words option to chatlm.generator
+- Implement response argument to chatlm.generator
 
-## [v0.3.0] - 2020/04/29
+## [v0.3.0] - 2020/06/21
 
 ### Changed
 
