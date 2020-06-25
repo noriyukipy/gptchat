@@ -11,8 +11,9 @@ def generate(model, tokenizer, top_k, top_p, max_length, text, bad_words_ids):
         response=None,
         add_eos_token=False,
     )
+    max_length_with_context = max_length - len(model_input["input_ids"])
 
-    for _ in range(max_length):
+    for _ in range(max_length_with_context):
         model_input = {key: np.array([val]) for key, val in model_input.items()}
         outputs = model(model_input)
 

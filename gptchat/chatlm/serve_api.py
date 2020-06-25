@@ -49,7 +49,7 @@ def main(config, host=None, port=None):
         top_k=params.top_k,
         top_p=params.top_p,
         max_length=params.max_length,
-        bad_words_ids=params.bad_words_ids,
+        bad_words_ids=bad_words_ids,
     )
 
     app = build_api(handler)
