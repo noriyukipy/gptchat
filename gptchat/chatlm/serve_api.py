@@ -23,7 +23,8 @@ class Handler:
             top_k=self._top_k,
             top_p=self._top_p,
             max_length=self._max_length,
-            text=req.context,
+            context=req.context,
+            response=req.response,
             bad_words_ids=self._bad_words_ids,
         )
         return {

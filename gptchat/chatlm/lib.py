@@ -4,11 +4,11 @@ import numpy as np
 import tensorflow as tf
 
 
-def generate(model, tokenizer, top_k, top_p, max_length, text, bad_words_ids):
+def generate(model, tokenizer, top_k, top_p, max_length, context, response, bad_words_ids):
     model_input = encode_plus(
-        context=text,
+        context=context,
         tokenizer=tokenizer,
-        response=None,
+        response=response,
         add_eos_token=False,
     )
     max_length_with_context = max_length - len(model_input["input_ids"])

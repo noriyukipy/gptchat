@@ -17,7 +17,8 @@ def main(config):
         for word in params.bad_words
     ]
 
-    text = "今日は疲れた"
+    context = "今日は疲れた"
+    response = "明日"
 
     output = generate(
         model=model,
@@ -25,7 +26,8 @@ def main(config):
         top_k=params.top_k,
         top_p=params.top_p,
         max_length=30,
-        text=text,
+        context=context,
+        response=response,
         bad_words_ids=bad_words_ids,
     )
     print(output)
