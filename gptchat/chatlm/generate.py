@@ -12,17 +12,25 @@ def main(config):
     tokenizer = transformers.AutoTokenizer.from_pretrained(params.output.tokenizer_dir)
     model = transformers.TFAutoModelWithLMHead.from_pretrained(params.output.model_dir)
 
-    text = "今日は疲れた"
-    
-    output_ids = generate(
+    bad_words_ids = [
+        tokenizer.encode(word, add_special_tokens=False)
+        for word in params.bad_words
+    ]
+
+    context = "今日は疲れた"
+    response = "明日"
+
+    output = generate(
         model=model,
         tokenizer=tokenizer,
         top_k=params.top_k,
         top_p=params.top_p,
         max_length=30,
-        text=text
+        context=context,
+        response=response,
+        bad_words_ids=bad_words_ids,
     )
-    print(tokenizer.decode(output_ids))
+    print(output)
 
 
 if __name__ == "__main__":
