@@ -20,7 +20,9 @@ Change directory to working directory.
 $ cd config
 ```
 
-## Train LM Model
+## LM Model
+
+**LM** model is a language model which aims to be used as a pretrained model for latter models.
 
 ### Preparation of Dataset
 
@@ -38,10 +40,9 @@ $ docker container run --gpus all -v $(pwd):/work -w /work --rm -it gptchat_tf p
 $ docker container run -v $(pwd):/work -w /work -p 8000:8000 --rm -it gptchat_tf python -m gptchat.lm.serve_api --config=lm/config.yaml --host=0.0.0.0 --port=8000
 ```
 
-## Train ChatLM Model
+## ChatLM Model
 
-GPTChat provides **ChatLM** Model.
-The model is a sequence to sequence model by fine-tuning pretrained GPT-2 to generate a **response** from a **context** given by a user.
+**ChatLM** model is a sequence to sequence model by fine-tuning pretrained GPT-2 to generate a **response** from a **context** given by a user.
 
 Context and response are given to the model separeted by the `[SEP]` token.
 The `[CLS]` token is also appended at the end of the tokens.
@@ -81,11 +82,4 @@ To monitor training progress, use tensorboard. Go to the output directory, and t
 
 ```sh
 $ docker container run -v $(pwd):/work -w /work -p 6006:6006 --rm gptchat_tf tensorboard --logdir . --host=0.0.0.0
-```
-
-## Response Generation
-
-```sh
-$ docker container run -v $(pwd)/config:/work -w /work --rm -it gptchat_tf python -m gptchat.lm.train --config=lm/config.yaml
-$ docker container run -v $(pwd)/config:/work -w /work -p 8000:8000 --rm -it gptchat_tf python -m gptchat.lm.serve_api --config=lm/config.yaml --host=0.0.0.0 --port=8000
 ```

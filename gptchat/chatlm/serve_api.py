@@ -1,6 +1,8 @@
 from gptchat.lib import load_config
 from gptchat.lib import set_seed
 from gptchat.lib import Request
+from gptchat.lib import Response
+from gptchat.lib import ModelInfo
 from gptchat.lib import build_api
 from .lib import generate
 import transformers
@@ -17,7 +19,7 @@ class Handler:
         self._bad_words_ids = bad_words_ids
 
     def generate(self, req: Request):
-        response = generate(
+        response, model_output = generate(
             model=self._model,
             tokenizer=self._tokenizer,
             top_k=self._top_k,
@@ -27,10 +29,11 @@ class Handler:
             response=req.response,
             bad_words_ids=self._bad_words_ids,
         )
-        return {
-            "context": req.context,
-            "response": response
-        }
+        return Response(
+            request=req,
+            response=response,
+            model_info=ModelInfo(output=model_output)
+        )
 
 
 def main(config, host=None, port=None):
