@@ -31,13 +31,13 @@ Before training, prepare language corpus such as Wikipedia.
 ### Training
 
 ```sh
-$ docker container run --gpus all -v $(pwd):/work -w /work --rm -it gptchat_tf python -m gptchat.lm.train --config=lm/config.yaml
+$ docker container run --gpus all -v $(pwd):/work -w /work --rm -it gptchat python -m gptchat.lm.train --config=lm/config.yaml
 ```
 
 ### Serve API
 
 ```sh
-$ docker container run -v $(pwd):/work -w /work -p 8000:8000 --rm -it gptchat_tf python -m gptchat.lm.serve_api --config=lm/config.yaml --host=0.0.0.0 --port=8000
+$ docker container run -v $(pwd):/work -w /work -p 8000:8000 --rm -it gptchat python -m gptchat.lm.serve_api --config=lm/config.yaml --host=0.0.0.0 --port=8000
 ```
 
 ## ChatLM Model
@@ -67,13 +67,13 @@ First column is a context, and the second is a response to the first column.
 Train the model with
 
 ```sh
-$ docker container run --gpus all -v $(pwd):/work -w /work --rm -it gptchat_tf python -m gptchat.chatlm.train --config=chatlm/config.yaml
+$ docker container run --gpus all -v $(pwd):/work -w /work --rm -it gptchat python -m gptchat.chatlm.train --config=chatlm/config.yaml
 ```
 
 ### Serve API
 
 ```sh
-$ docker container run -v $(pwd):/work -w /work -p 8000:8000 --rm -it gptchat_tf python -m gptchat.chatlm.serve_api --config=chatlm/config.yaml --host=0.0.0.0 --port=8000
+$ docker container run -v $(pwd):/work -w /work -p 8000:8000 --rm -it gptchat python -m gptchat.chatlm.serve_api --config=chatlm/config.yaml --host=0.0.0.0 --port=8000
 ```
 
 ## Logs
@@ -81,5 +81,5 @@ $ docker container run -v $(pwd):/work -w /work -p 8000:8000 --rm -it gptchat_tf
 To monitor training progress, use tensorboard. Go to the output directory, and then run tensorboard.
 
 ```sh
-$ docker container run -v $(pwd):/work -w /work -p 6006:6006 --rm gptchat_tf tensorboard --logdir . --host=0.0.0.0
+$ docker container run -v $(pwd):/work -w /work -p 6006:6006 --rm gptchat tensorboard --logdir . --host=0.0.0.0
 ```
