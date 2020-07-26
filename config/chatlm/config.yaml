@@ -28,4 +28,5 @@ top_k: 50
 top_p: 0.9
 bad_words:
     - "[UNK]"
+    - "[PAD]"
     - "[SEP]"

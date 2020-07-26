@@ -19,11 +19,6 @@ def generate(model, tokenizer, top_k, top_p, max_length, context, response, bad_
 
         # Predict next token
         next_token_logits = outputs[0][:, -1, :]
-        next_token_logits = transformers.modeling_tf_utils.tf_top_k_top_p_filtering(
-            next_token_logits,
-            top_k=top_k,
-            top_p=top_p,
-        )
 
         # Stop bad words
         next_token_logits = stop_bad_words(
@@ -33,6 +28,14 @@ def generate(model, tokenizer, top_k, top_p, max_length, context, response, bad_
             next_token_logits=next_token_logits,
         )
 
+        # Top_k top_p filtering
+        next_token_logits = transformers.modeling_tf_utils.tf_top_k_top_p_filtering(
+            next_token_logits,
+            top_k=top_k,
+            top_p=top_p,
+        )
+
+        # Sample next token
         next_token = tf.squeeze(
             tf.random.categorical(next_token_logits, dtype=tf.int32, num_samples=1),
             axis=1
