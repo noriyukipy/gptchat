@@ -7,6 +7,7 @@ import attrdict
 import yaml
 from fastapi import FastAPI
 from pydantic import BaseModel
+import typing
 
 
 def set_seed(seed):
@@ -54,7 +55,7 @@ class Request(BaseModel):
 
 
 class ModelInfo(BaseModel):
-    output: str
+    output: typing.Any
 
 
 class Response(BaseModel):

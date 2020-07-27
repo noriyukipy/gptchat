@@ -12,80 +12,36 @@ def generate(model, tokenizer, top_k, top_p, max_length, context, response, bad_
         add_eos_token=False,
     )
     max_length_with_context = max_length - len(model_input["input_ids"])
-
-    for _ in range(max_length_with_context):
-        model_input = {key: np.array([val]) for key, val in model_input.items()}
-        outputs = model(model_input)
-
-        # Predict next token
-        next_token_logits = outputs[0][:, -1, :]
-
-        # Stop bad words
-        next_token_logits = stop_bad_words(
-            tokenizer=tokenizer,
-            prev_input_ids=tf.convert_to_tensor(model_input["input_ids"]),
-            bad_words_ids=bad_words_ids,
-            next_token_logits=next_token_logits,
-        )
-
-        # Top_k top_p filtering
-        next_token_logits = transformers.modeling_tf_utils.tf_top_k_top_p_filtering(
-            next_token_logits,
-            top_k=top_k,
-            top_p=top_p,
-        )
-
-        # Sample next token
-        next_token = tf.squeeze(
-            tf.random.categorical(next_token_logits, dtype=tf.int32, num_samples=1),
-            axis=1
-        )
-
-        # Update inputs to model
-        model_input["input_ids"] = np.concatenate(
-            [model_input["input_ids"].flatten(), next_token.numpy()]
-        )
-        model_input["token_type_ids"] = np.concatenate(
-            [model_input["token_type_ids"].flatten(), np.array([1])]
-        )
-        model_input["attention_mask"] = np.concatenate(
-            [model_input["attention_mask"].flatten(), np.array([1])]
-        )
-
-        if next_token[0] == tokenizer.cls_token_id:
-            break
-
-    model_output = tokenizer.decode(model_input["input_ids"])
-    cleaned_output = clean_output(
-        decoded_str=model_output,
-        sep_token=tokenizer.sep_token,
-        cls_token=tokenizer.cls_token,
+    input_ids = tf.convert_to_tensor([model_input["input_ids"]])
+    gen_ids = model.generate(
+        input_ids,
+        num_return_sequences=5,
+        do_sample=True,
+        top_k=top_k,
+        top_p=top_p,
+        bad_words_ids=bad_words_ids,
+        eos_token_id=tokenizer.cls_token_id,
+        max_length=max_length,
     )
+    gen_texts = []
+    for gen_id in gen_ids:
+        gen_text = tokenizer.decode(
+            gen_id,
+            skip_special_tokens=False,
+            clean_up_tokenization_spaces=True,
+        )
+        cln_text = clean_output(
+            decoded_str=gen_text,
+            sep_token=tokenizer.sep_token,
+            cls_token=tokenizer.cls_token,
+        )
+        gen_texts.append(cln_text)
 
-    return cleaned_output, model_output
+    # Select the median length text as a final output
+    mid_idx = int(len(gen_texts) / 2)
+    selected_text = list(sorted(gen_texts, key=lambda x: len(x)))[mid_idx]
 
-
-def stop_bad_words(tokenizer, prev_input_ids, bad_words_ids, next_token_logits):
-    """This method works the same as bad_words argument given by `generate` methos
-    in transformers library utilizing some functions from
-    transformers.modeling_tf_utils.
-
-    https://github.com/huggingface/transformers/blob/75e1eed8d190afa5be30fba05cd872d79b492a24/src/transformers/modeling_tf_utils.py#L551
-    """
-    next_bad_ids_list = transformers.modeling_tf_utils.calc_banned_bad_words_ids(
-        prev_input_ids,
-        bad_words_ids
-    )
-    mask = [
-        [next_id in next_bad_ids for next_id in range(len(tokenizer))]
-        for next_bad_ids in next_bad_ids_list
-    ]
-    next_token_logits = transformers.modeling_tf_utils.set_tensor_by_indices_to_value(
-        next_token_logits,
-        tf.convert_to_tensor(mask, dtype=tf.bool),
-        -float("inf")
-    )
-    return next_token_logits
+    return selected_text, gen_texts
 
 
 def clean_output(decoded_str, sep_token, cls_token):
@@ -99,3 +55,32 @@ def clean_output(decoded_str, sep_token, cls_token):
         cleaned_str = cleaned_str[:right_idx]
 
     return cleaned_str
+
+
+def generate_prepare_inputs_for_generation(sep_token_id):
+    def prepare_inputs_for_generation(self, inputs, **kwargs):
+        batch_size, seq_len = inputs.shape
+        sep_idx = tf.where(inputs[0] == sep_token_id).numpy().max()
+
+        context_len = sep_idx
+        response_len = seq_len - sep_idx
+
+        token_type_ids = np.concatenate(
+            [np.zeros((batch_size, context_len)), np.ones((batch_size, response_len))],
+            axis=1
+        )
+        # After EOS, mask needs to be 0; however, tokens before EOS are only used and
+        # outpus after EOS are not used. Therefore, for simplicity, use 1 as a attention mask after OES.
+        attention_mask = np.concatenate(
+            [np.ones((batch_size, context_len)), np.ones((batch_size, response_len))],
+            axis=1
+        )
+
+        # This output is passed to https://github.com/huggingface/transformers/blob/master/src/transformers/modeling_tf_gpt2.py#L545
+        return {
+            "inputs": inputs,
+            "token_type_ids": tf.convert_to_tensor(token_type_ids, dtype=tf.int32),
+            "attention_mask": tf.convert_to_tensor(attention_mask, dtype=tf.int32),
+        }
+
+    return prepare_inputs_for_generation
