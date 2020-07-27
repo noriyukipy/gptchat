@@ -4,6 +4,8 @@ from gptchat.lib import Request
 from gptchat.lib import Response
 from gptchat.lib import ModelInfo
 from gptchat.lib import build_api
+from .lib import generate_prepare_inputs_for_generation
+import types
 from .lib import generate
 import transformers
 import uvicorn
@@ -43,6 +45,13 @@ def main(config, host=None, port=None):
 
     tokenizer = transformers.AutoTokenizer.from_pretrained(params.output.tokenizer_dir)
     model = transformers.TFAutoModelWithLMHead.from_pretrained(params.output.model_dir)
+    # Replace generation initializer
+    method = types.MethodType(
+        generate_prepare_inputs_for_generation(sep_token_id=tokenizer.sep_token_id),
+        model
+    )
+    model.prepare_inputs_for_generation = method
+
     bad_words_ids = [
         tokenizer.encode(word, add_special_tokens=False)
         for word in params.bad_words

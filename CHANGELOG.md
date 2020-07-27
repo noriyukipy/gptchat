@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - Bad word filter which did not filter out bad ids because of the filtering order of top_k-top_p and bad_word filters
+### Changed
+- Adopting generate function providing by HuggingFace instead of own implementation
 
 ## [v0.3.1] - 2020/06/25
 
