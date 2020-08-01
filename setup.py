@@ -9,7 +9,7 @@ setuptools.setup(
         "tokenizers==0.8.1",
         "fire==0.2.1",
         "fastapi==0.57.0",
-        "uvicorn==0.11.5",
+        "uvicorn==0.11.7",
         "pytest==5.4.1",
         "tqdm==4.43.0",
         "envyaml==0.2060",
