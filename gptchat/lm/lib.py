@@ -1,4 +1,5 @@
-from gptchat.lib import WarmupScheduler
+from gptchat.callback import WarmupScheduler
+from gptchat.callback import TransformersCheckpoint
 import tensorflow.keras as keras
 import tensorflow as tf
 import os
@@ -40,13 +41,13 @@ def train(params, model, tokenizer, train_dataset, valid_dataset):
     )
 
     # Create optimizer
-    total_steps = len(train_dataset) * params.num_epochs
+    total_steps = len(train_dataset) * params.train.num_epochs
     optimizer = keras.optimizers.Adam(
-        lr=params.learning_rate,
+        lr=params.train.learning_rate,
         beta_1=0.9,
         beta_2=0.999,
         epsilon=1e-08,  # default is 1e-07
-        clipnorm=params.max_grad_norm  # cilipping gradient by L2 norm
+        clipnorm=params.train.max_grad_norm  # cilipping gradient by L2 norm
     )
 
     model.compile(
@@ -61,35 +62,35 @@ def train(params, model, tokenizer, train_dataset, valid_dataset):
     callbacks_list = [
         keras.callbacks.EarlyStopping(
             monitor="val_loss",
-            patience=params.patience,
-            # EarlyStopping callback does keep the previous epoch model even if the performance gets worse.
-            # To restore the best model, load weights from checkpoint which keeps the best only.
-            restore_best_weights=False
+            patience=params.train.patience,
+            restore_best_weights=True
         ),
         keras.callbacks.ModelCheckpoint(
             filepath=params.output.checkpoint_path,
             monitor="val_loss",
             save_best_only=True,
         ),
+        TransformersCheckpoint(model=model, save_dir=params.output.model_dir),
         keras.callbacks.TensorBoard(
             log_dir=params.output.tensorboard_dir,
             update_freq="batch",
             # To automatically refresh Tensorboard , set profile_batch=0
             # See more details here https://github.com/tensorflow/tensorboard/issues/2412
-            profile_batch=0,  
+            profile_batch=0,
         ),
-        WarmupScheduler(total_steps * params.warmup_rate, params.learning_rate),
+        WarmupScheduler(total_steps * params.train.warmup_rate, params.train.learning_rate),
     ]
     
     # Train model
     model.fit(
         train_dataset,
-        epochs=params.num_epochs,
+        epochs=params.train.num_epochs,
         callbacks=callbacks_list,
         validation_data=valid_dataset,
     )
 
     # Restore the best model and save it as pretrained model format
+    # If restore_best_weights=False, this process is required
     model.load_weights(params.output.checkpoint_path)
     model.save_pretrained(params.output.model_dir)
 

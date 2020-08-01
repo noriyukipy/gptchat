@@ -1,9 +1,11 @@
 from gptchat.lib import set_seed
-from gptchat.lib import load_config
+from gptchat.lib import load_yaml
 from gptchat.lm.lib import train
-import transformers
+from gptchat.gpt2 import load_or_init_model
+from gptchat.tokenizers import TokenizerWrapper
+from .config import Config
+from tokenizers import Tokenizer
 import numpy as np
-import os
 import collections
 import tensorflow as tf
 import math
@@ -99,46 +101,31 @@ def build_data(tokenizer, samples, max_length):
     return input_, labels
 
 
-def build_model(tokenizer, params):
-    config = transformers.GPT2Config(
-        vocab_size=len(tokenizer),
-        n_ctx=params.n_ctx,
-        n_positions=params.block_size,
-        n_embd=params.n_embd,
-        n_layer=params.n_layer,
-        n_head=params.n_head,
-    )
-    model = transformers.TFGPT2LMHeadModel(config=config)
-    return model
-
-
 def main(config):
-    params = load_config(config)
+    params = Config(**load_yaml(config))
     print(params)
 
-    set_seed(params.seed)
+    # Set seed
+    set_seed(params.train.seed)
 
     train_texts = load_dataset(params.input.train_file)
     valid_texts = load_dataset(params.input.valid_file)
 
     # Build and save tokenizer
-    tokenizer = transformers.AutoTokenizer.from_pretrained(params.input.pretrained_tokenizer_dir)
-    os.makedirs(params.output.tokenizer_dir, exist_ok=True)
-    # To be able to use AutoTokenizer when loading afterward,
-    # the corresponded AutoConfig should be saved.
-    # This is because the tokenizer is for BERT, which is
-    # different from our actual model GPT2.
-    # See more details about this issue here
-    #   https://github.com/huggingface/transformers/issues/4197
-    transformers.AutoConfig.from_pretrained(params.input.pretrained_tokenizer_dir).save_pretrained(params.output.tokenizer_dir)
-    tokenizer.save_pretrained(params.output.tokenizer_dir)
+    tokenizer = Tokenizer.from_file(params.input.tokenizer_file)
+    tokenizer.save(params.output.tokenizer_file)
+    tokenizer = TokenizerWrapper(tokenizer)
 
-    # Build data
-    train_dataset = Dataset(tokenizer, train_texts, params.max_length, params.batch_size)
-    valid_dataset = Dataset(tokenizer, valid_texts, params.max_length, params.batch_size)
+    # Build dataset
+    train_dataset = Dataset(tokenizer, train_texts, params.train.max_length, params.train.batch_size)
+    valid_dataset = Dataset(tokenizer, valid_texts, params.train.max_length, params.train.batch_size)
 
     # Train model
-    model = transformers.TFGPT2LMHeadModel.from_pretrained(params.input.pretrained_model_dir)
+    model = load_or_init_model(
+        pretrained_model_dir=params.input.pretrained_model_dir,
+        vocab_size=len(tokenizer),
+        params=params.model_params,
+    )
     val_best_model = train(params, model, tokenizer, train_dataset, valid_dataset)
     val_best_model.summary()
 

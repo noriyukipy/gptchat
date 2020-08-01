@@ -3,7 +3,7 @@ train:
     files:
         - tokenizer/data/train.txt
     # [Output file to save vocabulary]
-    output_file: tokenizer/output/model/vocab.json
+    output_file: tokenizer/output/model/tokenizer.json
 
     # [Train parameters]
     add_prefix_space: False
@@ -19,6 +19,7 @@ train:
     min_frequency: 2
     special_tokens:
         - "[UNK]"
+        - "[PAD]"
         - "[CLS]"
         - "[SEP]"
     limit_alphabet: 1000

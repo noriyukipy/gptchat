@@ -1,32 +1,39 @@
-# Path of input and output resources
 input:
     train_file: chatlm/data/train.tsv
     valid_file: chatlm/data/valid.tsv
-    pretrained_tokenizer_dir: lm/output/tokenizer
-    pretrained_model_dir: lm/output/model
+    tokenizer_file: tokenizer/output/model/tokenizer.json
+    # If pretrained_model_dir is set except for null,
+    # the model is loaded from here and `model_param` section is ignored
+    pretrained_model_dir: null
 output:
     model_dir:       chatlm/output/model
-    tokenizer_dir:   chatlm/output/tokenizer
+    tokenizer_file:  chatlm/output/model/tokenizer.json
     tensorboard_dir: chatlm/output/tensorboard
     checkpoint_path: chatlm/output/ckpt.h5
 
-# [Dataset Config]
-max_length: 256
+# model_params is used when pretrained_model_dir is set to null
+model_params:
+    n_embd: 768
+    n_layer: 12
+    n_head: 12
+    n_ctx: 512
 
-# [Training Parameters]
-seed: 1234
-num_epochs: 10
-batch_size: 16
-learning_rate: 0.00005
-max_grad_norm: 1.0
-warmup_rate: 0.1
-patience: 3
+train:
+    max_length: 256
+    seed: 1234
+    num_epochs: 10
+    batch_size: 16
+    learning_rate: 0.00005
+    max_grad_norm: 1.0
+    warmup_rate: 0.1
+    patience: 3
 
-# [Generation Config]
-do_sample: True
-top_k: 50
-top_p: 0.9
-bad_words:
-    - "[UNK]"
-    - "[PAD]"
-    - "[SEP]"
+pred:
+    # [Generation Config]
+    do_sample: True
+    top_k: 50
+    top_p: 0.9
+    bad_words:
+        - "[UNK]"
+        - "[PAD]"
+        - "[SEP]"
