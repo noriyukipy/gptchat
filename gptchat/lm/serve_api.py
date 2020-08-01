@@ -1,9 +1,13 @@
-from gptchat.lib import load_config
+from gptchat.lib import load_yaml
 from gptchat.lib import set_seed
-from gptchat.lib import Request
-from gptchat.lib import Response
-from gptchat.lib import ModelInfo
-from gptchat.lib import build_api
+from gptchat.api import Request
+from gptchat.api import Response
+from gptchat.api import ModelInfo
+from gptchat.api import build_api
+from gptchat.tokenizers import TokenizerWrapper
+from .config import Config
+from tokenizers import Tokenizer
+import tensorflow as tf
 import transformers
 import uvicorn
 
@@ -19,17 +23,18 @@ class Handler:
 
         bad_words_ids = [
             self._tokenizer.encode(word, add_special_tokens=False)
-            for word in self._params.bad_words
+            for word in self._params.pred.bad_words
         ]
         input_ids = self._tokenizer.encode(
-            req.context, add_special_tokens=False, return_tensors="tf"
+            req.context, add_special_tokens=False,
         )
         output = self._model.generate(
-            input_ids=input_ids,
-            do_sample=self._params.do_sample,
-            top_k=self._params.top_k,
-            top_p=self._params.top_p,
+            input_ids=tf.convert_to_tensor([input_ids]),
+            do_sample=self._params.pred.do_sample,
+            top_k=self._params.pred.top_k,
+            top_p=self._params.pred.top_p,
             bad_words_ids=bad_words_ids,
+            max_length=self._params.pred.max_length,
         )
         response = self._tokenizer.decode(output[0])
 
@@ -44,11 +49,12 @@ class Handler:
 
 
 def main(config, host=None, port=None):
-    params = load_config(config)
+    params = Config(**load_yaml(config))
     print(params)
-    set_seed(params.seed)
+    set_seed(params.pred.seed)
 
-    tokenizer = transformers.AutoTokenizer.from_pretrained(params.output.tokenizer_dir)
+    tokenizer = Tokenizer.from_file(params.output.tokenizer_file)
+    tokenizer = TokenizerWrapper(tokenizer)
     model = transformers.TFAutoModelWithLMHead.from_pretrained(params.output.model_dir)
     handler = Handler(model, tokenizer, params)
 
