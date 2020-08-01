@@ -20,6 +20,14 @@ Change directory to working directory.
 $ cd config
 ```
 
+## Tokenizer
+
+Train your tokenizer with `gptchat.tokenizer.train`
+
+```sh
+$ docker container run  -v $(pwd)/config:/work -w /work --rm -it gptchat python -m gptchat.tokenizer.train --config=tokenizer/config.yaml
+```
+
 ## LM Model
 
 **LM** model is a language model which aims to be used as a pretrained model for latter models.
