@@ -31,6 +31,8 @@ train:
 pred:
     # [Generation Config]
     do_sample: True
+    seed: 1234
+    max_length: 100
     top_k: 50
     top_p: 0.9
     bad_words:

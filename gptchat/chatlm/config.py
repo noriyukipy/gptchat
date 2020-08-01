@@ -29,6 +29,8 @@ class ConfigTrain(BaseModel):
 
 class ConfigPred(BaseModel):
     do_sample: bool
+    seed: int
+    max_length: int
     top_k: int
     top_p: float
     bad_words: List[str]

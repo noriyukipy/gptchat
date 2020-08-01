@@ -28,7 +28,6 @@ def generate(model, tokenizer, top_k, top_p, max_length, context, response, bad_
         gen_text = tokenizer.decode(
             gen_id,
             skip_special_tokens=False,
-            clean_up_tokenization_spaces=True,
         )
         cln_text = clean_output(
             decoded_str=gen_text,
