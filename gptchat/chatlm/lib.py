@@ -1,5 +1,4 @@
 from .train import encode_plus
-import transformers
 import numpy as np
 import tensorflow as tf
 

@@ -1,4 +1,7 @@
 class TokenizerWrapper:
+    """TokenizerWrapper wraps libraries given by HuggingFace tokenizers
+    to adopt interface of HuggingFace transformers tokenizer.
+    """
     sep_token = "[SEP]"
     cls_token = "[CLS]"
     pad_token = "[PAD]"
