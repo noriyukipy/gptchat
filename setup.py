@@ -14,6 +14,6 @@ setuptools.setup(
         "tqdm==4.43.0",
         "envyaml==0.2060",
     ],
-    version="0.3.1",
+    version="0.4.0",
     author="Noriyuki Abe",
 )
