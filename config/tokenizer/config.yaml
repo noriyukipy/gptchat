@@ -1,0 +1,25 @@
+train:
+    # [Input files to build vocabulary]
+    files:
+        - tokenizer/data/train.txt
+    # [Output file to save vocabulary]
+    output_file: tokenizer/output/model/vocab.json
+
+    # [Train parameters]
+    add_prefix_space: False
+    unk_token: "[UNK]"
+    # vocab_size is the total size of vocabulary.
+    # Even if this size sets to less than
+    #
+    #   len(special_tokens) + limit_alphabet
+    #
+    # the number of vocabularies will equals to 
+    # len(special_tokens) + limit_alphabet
+    vocab_size: 32000
+    min_frequency: 2
+    special_tokens:
+        - "[UNK]"
+        - "[CLS]"
+        - "[SEP]"
+    limit_alphabet: 1000
+    initial_alphabet: []

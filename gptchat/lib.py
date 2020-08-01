@@ -3,8 +3,7 @@ import numpy as np
 import random
 import tensorflow as tf
 import tensorflow.keras as keras
-import attrdict
-import yaml
+from envyaml import EnvYAML
 from fastapi import FastAPI
 from pydantic import BaseModel
 import typing
@@ -17,8 +16,14 @@ def set_seed(seed):
     tf.random.set_seed(seed)
 
 
-def load_config(config_path):
-    return attrdict.AttrDict(yaml.load(open(config_path)))
+def load_yaml(path):
+    """
+    Args:
+        path (str): File path of yaml configuration file
+    Returns:
+        Dict[str, Any]:
+    """
+    return EnvYAML(path, include_environment=False).export()
 
 
 class WarmupScheduler(keras.callbacks.Callback):

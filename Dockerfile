@@ -1,7 +1,7 @@
 FROM tensorflow/tensorflow:2.2.0-gpu
 
 RUN apt-get update && \
-    apt-get install -y wget unzip language-pack-ja mecab libmecab-dev mecab-ipadic-utf8 jq
+    apt-get install -y wget unzip language-pack-ja jq
 
 COPY . /app
 WORKDIR /app
