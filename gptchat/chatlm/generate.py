@@ -16,13 +16,12 @@ def main(config):
     # Replace generation initializer
     method = types.MethodType(
         generate_prepare_inputs_for_generation(sep_token_id=tokenizer.sep_token_id),
-        model
+        model,
     )
     model.prepare_inputs_for_generation = method
 
     bad_words_ids = [
-        tokenizer.encode(word, add_special_tokens=False)
-        for word in params.bad_words
+        tokenizer.encode(word, add_special_tokens=False) for word in params.bad_words
     ]
 
     context = "おはよう"

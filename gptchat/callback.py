@@ -26,7 +26,7 @@ class WarmupScheduler(keras.callbacks.Callback):
         scheduled_lr = self._learning_rate * (step / self._warmup_steps)
         # Set the value back to the optimizer before this epoch starts
         keras.backend.set_value(self.model.optimizer.lr, scheduled_lr)
-        #print('\nStep {}: lr is schedulerd {:.4e} -> {:.4e}]'.format(step, lr, float(tf.keras.backend.get_value(self.model.optimizer.lr))))
+        # print('\nStep {}: lr is schedulerd {:.4e} -> {:.4e}]'.format(step, lr, float(tf.keras.backend.get_value(self.model.optimizer.lr))))
 
 
 class TransformersCheckpoint(keras.callbacks.Callback):

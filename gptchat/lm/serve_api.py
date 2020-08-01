@@ -22,9 +22,7 @@ class Handler:
             for word in self._params.bad_words
         ]
         input_ids = self._tokenizer.encode(
-            req.context,
-            add_special_tokens=False,
-            return_tensors="tf"
+            req.context, add_special_tokens=False, return_tensors="tf"
         )
         output = self._model.generate(
             input_ids=input_ids,
@@ -41,7 +39,7 @@ class Handler:
         return Response(
             request=req,
             response=cleaned_response,
-            model_info=ModelInfo(output=response)
+            model_info=ModelInfo(output=response),
         )
 
 

@@ -19,11 +19,6 @@ class Response(BaseModel):
 
 
 def build_api(handler):
-    app = FastAPI(
-        title="GPTChat",
-        description="",
-        version="0.0.0",
-
-    )
+    app = FastAPI(title="GPTChat", description="", version="0.0.0",)
     app.add_api_route("/generate", handler.generate, methods=["POST"])
     return app

@@ -30,8 +30,8 @@ class Dataset(tf.keras.utils.Sequence):
             ids.extend(tokenizer.convert_tokens_to_ids(tokens))
 
         samples = []
-        for idx in range(0, len(ids)-block_size+1, block_size):
-            sample = ids[idx:idx+block_size]
+        for idx in range(0, len(ids) - block_size + 1, block_size):
+            sample = ids[idx : idx + block_size]
             samples.append(sample)
 
         # Define attributes
@@ -42,7 +42,10 @@ class Dataset(tf.keras.utils.Sequence):
         inputs = []
         labels = []
 
-        for i in range(idx*self._batch_size, min((idx+1)*self._batch_size, len(self._samples))):
+        for i in range(
+            idx * self._batch_size,
+            min((idx + 1) * self._batch_size, len(self._samples)),
+        ):
             sample = self._samples[i]
             inputs.append(sample[:-1])
             labels.append(sample[1:])
@@ -84,12 +87,18 @@ def main(config):
     # different from our actual model GPT2.
     # See more details about this issue here
     #   https://github.com/huggingface/transformers/issues/4197
-    transformers.AutoConfig.from_pretrained(params.tokenizer_model_name).save_pretrained(params.output.tokenizer_dir)
+    transformers.AutoConfig.from_pretrained(
+        params.tokenizer_model_name
+    ).save_pretrained(params.output.tokenizer_dir)
     tokenizer.save_pretrained(params.output.tokenizer_dir)
 
     # Build data
-    train_dataset = Dataset(tokenizer, train_texts, params.block_size, params.batch_size)
-    valid_dataset = Dataset(tokenizer, valid_texts, params.block_size, params.batch_size)
+    train_dataset = Dataset(
+        tokenizer, train_texts, params.block_size, params.batch_size
+    )
+    valid_dataset = Dataset(
+        tokenizer, valid_texts, params.block_size, params.batch_size
+    )
 
     # Train model
     model = build_model(tokenizer, params)

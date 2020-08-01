@@ -35,9 +35,7 @@ class Handler:
             bad_words_ids=self._bad_words_ids,
         )
         return Response(
-            request=req,
-            response=response,
-            model_info=ModelInfo(output=model_output)
+            request=req, response=response, model_info=ModelInfo(output=model_output)
         )
 
 
@@ -53,7 +51,7 @@ def main(config, host=None, port=None):
     # Replace generation initializer
     method = types.MethodType(
         generate_prepare_inputs_for_generation(sep_token_id=tokenizer.sep_token_id),
-        model
+        model,
     )
     model.prepare_inputs_for_generation = method
 

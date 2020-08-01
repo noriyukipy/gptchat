@@ -23,9 +23,15 @@ def load_dataset(path):
     return samples
 
 
-def encode_plus(tokenizer, context,
-                response=None, add_sep_token=True, add_eos_token=True,
-                pad_to_max_length=False, max_length=None):
+def encode_plus(
+    tokenizer,
+    context,
+    response=None,
+    add_sep_token=True,
+    add_eos_token=True,
+    pad_to_max_length=False,
+    max_length=None,
+):
     context_ids = tokenizer.encode(context, add_special_tokens=False)
     if add_sep_token:
         response_ids = [tokenizer.sep_token_id]
@@ -50,7 +56,7 @@ def encode_plus(tokenizer, context,
         attention_mask += [0] * diff_len
 
     tensor = {
-        "input_ids":      np.array(input_ids),
+        "input_ids": np.array(input_ids),
         "token_type_ids": np.array(token_type_ids),
         "attention_mask": np.array(attention_mask),
     }
@@ -67,10 +73,10 @@ class Dataset(tf.keras.utils.Sequence):
 
     def __getitem__(self, idx):
         samples = [
-            self._samples[i] for i in
-            range(
-                idx*self._batch_size,
-                min((idx+1)*self._batch_size, len(self._samples))
+            self._samples[i]
+            for i in range(
+                idx * self._batch_size,
+                min((idx + 1) * self._batch_size, len(self._samples)),
             )
         ]
         return build_data(self._tokenizer, samples, self._max_length)
@@ -81,15 +87,18 @@ class Dataset(tf.keras.utils.Sequence):
 
 def build_data(tokenizer, samples, max_length):
     input_ = {
-        "input_ids":      [],
+        "input_ids": [],
         "token_type_ids": [],
         "attention_mask": [],
     }
     labels = []
     for sample in samples:
         tensor = encode_plus(
-            tokenizer, sample.context, sample.response,
-            pad_to_max_length=True, max_length=max_length
+            tokenizer,
+            sample.context,
+            sample.response,
+            pad_to_max_length=True,
+            max_length=max_length,
         )
         for key in input_:
             input_[key].append(tensor[key][:-1])
@@ -117,8 +126,12 @@ def main(config):
     tokenizer = TokenizerWrapper(tokenizer)
 
     # Build dataset
-    train_dataset = Dataset(tokenizer, train_texts, params.train.max_length, params.train.batch_size)
-    valid_dataset = Dataset(tokenizer, valid_texts, params.train.max_length, params.train.batch_size)
+    train_dataset = Dataset(
+        tokenizer, train_texts, params.train.max_length, params.train.batch_size
+    )
+    valid_dataset = Dataset(
+        tokenizer, valid_texts, params.train.max_length, params.train.batch_size
+    )
 
     # Train model
     model = load_or_init_model(

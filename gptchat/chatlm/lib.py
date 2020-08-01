@@ -3,12 +3,11 @@ import numpy as np
 import tensorflow as tf
 
 
-def generate(model, tokenizer, top_k, top_p, max_length, context, response, bad_words_ids):
+def generate(
+    model, tokenizer, top_k, top_p, max_length, context, response, bad_words_ids
+):
     model_input = encode_plus(
-        context=context,
-        tokenizer=tokenizer,
-        response=response,
-        add_eos_token=False,
+        context=context, tokenizer=tokenizer, response=response, add_eos_token=False,
     )
     max_length_with_context = max_length - len(model_input["input_ids"])
     input_ids = tf.convert_to_tensor([model_input["input_ids"]])
@@ -24,10 +23,7 @@ def generate(model, tokenizer, top_k, top_p, max_length, context, response, bad_
     )
     gen_texts = []
     for gen_id in gen_ids:
-        gen_text = tokenizer.decode(
-            gen_id,
-            skip_special_tokens=False,
-        )
+        gen_text = tokenizer.decode(gen_id, skip_special_tokens=False,)
         cln_text = clean_output(
             decoded_str=gen_text,
             sep_token=tokenizer.sep_token,
@@ -46,7 +42,7 @@ def clean_output(decoded_str, sep_token, cls_token):
     cleaned_str = decoded_str.replace(" ", "")
 
     left_idx = cleaned_str.find(sep_token)
-    cleaned_str = cleaned_str[left_idx+len(sep_token):]
+    cleaned_str = cleaned_str[left_idx + len(sep_token) :]
 
     right_idx = cleaned_str.find(cls_token)
     if right_idx != -1:
@@ -65,13 +61,13 @@ def generate_prepare_inputs_for_generation(sep_token_id):
 
         token_type_ids = np.concatenate(
             [np.zeros((batch_size, context_len)), np.ones((batch_size, response_len))],
-            axis=1
+            axis=1,
         )
         # After EOS, mask needs to be 0; however, tokens before EOS are only used and
         # outpus after EOS are not used. Therefore, for simplicity, use 1 as a attention mask after OES.
         attention_mask = np.concatenate(
             [np.ones((batch_size, context_len)), np.ones((batch_size, response_len))],
-            axis=1
+            axis=1,
         )
 
         # This output is passed to https://github.com/huggingface/transformers/blob/master/src/transformers/modeling_tf_gpt2.py#L545

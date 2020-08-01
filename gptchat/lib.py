@@ -6,7 +6,7 @@ from envyaml import EnvYAML
 
 
 def set_seed(seed):
-    os.environ['PYTHONHASHSEED'] = '0'
+    os.environ["PYTHONHASHSEED"] = "0"
     np.random.seed(seed)
     random.seed(seed)
     tf.random.set_seed(seed)
