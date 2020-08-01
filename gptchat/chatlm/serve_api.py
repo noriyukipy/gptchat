@@ -1,12 +1,15 @@
-from gptchat.lib import load_config
+from gptchat.api import Request
+from gptchat.api import Response
+from gptchat.api import ModelInfo
+from gptchat.api import build_api
 from gptchat.lib import set_seed
-from gptchat.lib import Request
-from gptchat.lib import Response
-from gptchat.lib import ModelInfo
-from gptchat.lib import build_api
+from gptchat.lib import load_yaml
+from gptchat.tokenizers import TokenizerWrapper
+from .config import Config
 from .lib import generate_prepare_inputs_for_generation
-import types
 from .lib import generate
+from tokenizers import Tokenizer
+import types
 import transformers
 import uvicorn
 
@@ -32,36 +35,36 @@ class Handler:
             bad_words_ids=self._bad_words_ids,
         )
         return Response(
-            request=req,
-            response=response,
-            model_info=ModelInfo(output=model_output)
+            request=req, response=response, model_info=ModelInfo(output=model_output)
         )
 
 
 def main(config, host=None, port=None):
-    params = load_config(config)
+    params = Config(**load_yaml(config))
     print(params)
-    set_seed(params.seed)
+    set_seed(params.pred.seed)
 
-    tokenizer = transformers.AutoTokenizer.from_pretrained(params.output.tokenizer_dir)
+    tokenizer = Tokenizer.from_file(params.output.tokenizer_file)
+    tokenizer = TokenizerWrapper(tokenizer)
+
     model = transformers.TFAutoModelWithLMHead.from_pretrained(params.output.model_dir)
     # Replace generation initializer
     method = types.MethodType(
         generate_prepare_inputs_for_generation(sep_token_id=tokenizer.sep_token_id),
-        model
+        model,
     )
     model.prepare_inputs_for_generation = method
 
     bad_words_ids = [
         tokenizer.encode(word, add_special_tokens=False)
-        for word in params.bad_words
+        for word in params.pred.bad_words
     ]
     handler = Handler(
         model=model,
         tokenizer=tokenizer,
-        top_k=params.top_k,
-        top_p=params.top_p,
-        max_length=params.max_length,
+        top_k=params.pred.top_k,
+        top_p=params.pred.top_p,
+        max_length=params.pred.max_length,
         bad_words_ids=bad_words_ids,
     )
 

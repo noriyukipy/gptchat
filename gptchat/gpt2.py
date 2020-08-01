@@ -1,13 +1,39 @@
-from gptchat.lib import WarmupScheduler
+from .callback import WarmupScheduler
+from .callback import TransformersCheckpoint
+import transformers
 import tensorflow.keras as keras
 import tensorflow as tf
 import os
 
 
+def init_model(vocab_size, params):
+    config = transformers.GPT2Config(
+        vocab_size=vocab_size,
+        n_ctx=params.n_ctx,
+        n_positions=params.n_ctx,
+        n_embd=params.n_embd,
+        n_layer=params.n_layer,
+        n_head=params.n_head,
+    )
+    model = transformers.TFGPT2LMHeadModel(config=config)
+    return model
+
+
+def load_or_init_model(pretrained_model_dir, vocab_size, params):
+    # Train model
+    if pretrained_model_dir:
+        print(f"Load model from {pretrained_model_dir}")
+        model = transformers.TFGPT2LMHeadModel.from_pretrained(pretrained_model_dir)
+    else:
+        print(f"Initialize model with parameters: {params}")
+        model = init_model(vocab_size, params)
+
+    return model
+
+
 def cross_entropy_loss_with_padding(num_labels, pad_token_id):
-    loss_fct = tf.keras.losses.SparseCategoricalCrossentropy(
-        from_logits=True,
-        reduction=tf.keras.losses.Reduction.NONE
+    loss_fct = keras.losses.SparseCategoricalCrossentropy(
+        from_logits=True, reduction=keras.losses.Reduction.NONE
     )
 
     def loss(y_true, y_pred):
@@ -35,18 +61,17 @@ def train(params, model, tokenizer, train_dataset, valid_dataset):
     # Set from_logits=True because TFGPT2LMHeadModel returns the logits (before Softmax)
     # loss = keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     loss = cross_entropy_loss_with_padding(
-        num_labels=len(tokenizer),
-        pad_token_id=tokenizer.pad_token_id,
+        num_labels=len(tokenizer), pad_token_id=tokenizer.pad_token_id,
     )
 
     # Create optimizer
-    total_steps = len(train_dataset) * params.num_epochs
+    total_steps = len(train_dataset) * params.train.num_epochs
     optimizer = keras.optimizers.Adam(
-        lr=params.learning_rate,
+        lr=params.train.learning_rate,
         beta_1=0.9,
         beta_2=0.999,
         epsilon=1e-08,  # default is 1e-07
-        clipnorm=params.max_grad_norm  # cilipping gradient by L2 norm
+        clipnorm=params.train.max_grad_norm,  # cilipping gradient by L2 norm
     )
 
     model.compile(
@@ -57,42 +82,43 @@ def train(params, model, tokenizer, train_dataset, valid_dataset):
         #     keras.metrics.SparseCategoricalAccuracy(),
         # ],
     )
-    
+
     callbacks_list = [
         keras.callbacks.EarlyStopping(
             monitor="val_loss",
-            patience=params.patience,
-            # EarlyStopping callback does keep the previous epoch model even if the performance gets worse.
-            # To restore the best model, load weights from checkpoint which keeps the best only.
-            restore_best_weights=False
+            patience=params.train.patience,
+            restore_best_weights=True,
         ),
         keras.callbacks.ModelCheckpoint(
             filepath=params.output.checkpoint_path,
             monitor="val_loss",
             save_best_only=True,
         ),
+        TransformersCheckpoint(model=model, save_dir=params.output.model_dir),
         keras.callbacks.TensorBoard(
             log_dir=params.output.tensorboard_dir,
             update_freq="batch",
             # To automatically refresh Tensorboard , set profile_batch=0
             # See more details here https://github.com/tensorflow/tensorboard/issues/2412
-            profile_batch=0,  
+            profile_batch=0,
         ),
-        WarmupScheduler(total_steps * params.warmup_rate, params.learning_rate),
+        WarmupScheduler(
+            total_steps * params.train.warmup_rate, params.train.learning_rate
+        ),
     ]
-    
+
     # Train model
     model.fit(
         train_dataset,
-        epochs=params.num_epochs,
+        epochs=params.train.num_epochs,
         callbacks=callbacks_list,
         validation_data=valid_dataset,
     )
 
     # Restore the best model and save it as pretrained model format
+    # If restore_best_weights=False, this process is required
     model.load_weights(params.output.checkpoint_path)
     model.save_pretrained(params.output.model_dir)
 
     # Save model with best performance
     return model
-

@@ -2,34 +2,42 @@
 input:
     train_file: lm/data/train.txt
     valid_file: lm/data/valid.txt
+    tokenizer_file: tokenizer/output/model/tokenizer.json
+    # If pretrained_model_dir is set except for null,
+    # the model is loaded from here and `model_param` section is ignored
+    pretrained_model_dir: null
 output:
-    model_dir:       lm/output/model
-    tokenizer_dir:   lm/output/tokenizer
-    tensorboard_dir: lm/output/tensorboard
-    checkpoint_path: lm/output/ckpt.h5
+    model_dir:       chatlm/output/model
+    tokenizer_file:  chatlm/output/model/tokenizer.json
+    tensorboard_dir: chatlm/output/tensorboard
+    checkpoint_path: chatlm/output/ckpt.h5
 
-# [Model Parameters]
-# For English tokenizer, specify "gpt2"
-# For Japanese tokenizer, specify "cl-tohoku/bert-base-japanese"
-tokenizer_model_name: "cl-tohoku/bert-base-japanese"
-n_embd: 768
-n_layer: 12
-n_head: 12
-n_ctx: 512
 
-# [Training Parameters]
-seed: 1234
-num_epochs: 10
-batch_size: 6
-block_size: 512  # This parameter should be equal to n_ctx
-learning_rate: 0.00005
-max_grad_norm: 1.0
-warmup_rate: 0.1
-patience: 1
+# model_params is used when pretrained_model_dir is set to null
+model_params:
+    n_embd: 768
+    n_layer: 12
+    n_head: 12
+    n_ctx: 512
 
-# [Generation Config]
-do_sample: True
-top_k: 50
-top_p: 0.9
-bad_words:
-    - "[UNK]"
+train:
+    block_size: 512
+    seed: 1234
+    num_epochs: 10
+    batch_size: 6
+    learning_rate: 0.00005
+    max_grad_norm: 1.0
+    warmup_rate: 0.1
+    patience: 3
+
+pred:
+    # [Generation Config]
+    do_sample: True
+    seed: 1234
+    max_length: 100
+    top_k: 50
+    top_p: 0.9
+    bad_words:
+        - "[UNK]"
+        - "[PAD]"
+        - "[SEP]"

@@ -1,9 +1,11 @@
 from gptchat.lib import set_seed
-from gptchat.lib import load_config
-from gptchat.lm.lib import train
-import transformers
+from gptchat.lib import load_yaml
+from gptchat.gpt2 import load_or_init_model
+from gptchat.gpt2 import train
+from gptchat.tokenizers import TokenizerWrapper
+from .config import Config
+from tokenizers import Tokenizer
 import numpy as np
-import os
 import collections
 import tensorflow as tf
 import math
@@ -21,9 +23,15 @@ def load_dataset(path):
     return samples
 
 
-def encode_plus(tokenizer, context,
-                response=None, add_sep_token=True, add_eos_token=True,
-                pad_to_max_length=False, max_length=None):
+def encode_plus(
+    tokenizer,
+    context,
+    response=None,
+    add_sep_token=True,
+    add_eos_token=True,
+    pad_to_max_length=False,
+    max_length=None,
+):
     context_ids = tokenizer.encode(context, add_special_tokens=False)
     if add_sep_token:
         response_ids = [tokenizer.sep_token_id]
@@ -48,7 +56,7 @@ def encode_plus(tokenizer, context,
         attention_mask += [0] * diff_len
 
     tensor = {
-        "input_ids":      np.array(input_ids),
+        "input_ids": np.array(input_ids),
         "token_type_ids": np.array(token_type_ids),
         "attention_mask": np.array(attention_mask),
     }
@@ -65,10 +73,10 @@ class Dataset(tf.keras.utils.Sequence):
 
     def __getitem__(self, idx):
         samples = [
-            self._samples[i] for i in
-            range(
-                idx*self._batch_size,
-                min((idx+1)*self._batch_size, len(self._samples))
+            self._samples[i]
+            for i in range(
+                idx * self._batch_size,
+                min((idx + 1) * self._batch_size, len(self._samples)),
             )
         ]
         return build_data(self._tokenizer, samples, self._max_length)
@@ -79,15 +87,18 @@ class Dataset(tf.keras.utils.Sequence):
 
 def build_data(tokenizer, samples, max_length):
     input_ = {
-        "input_ids":      [],
+        "input_ids": [],
         "token_type_ids": [],
         "attention_mask": [],
     }
     labels = []
     for sample in samples:
         tensor = encode_plus(
-            tokenizer, sample.context, sample.response,
-            pad_to_max_length=True, max_length=max_length
+            tokenizer,
+            sample.context,
+            sample.response,
+            pad_to_max_length=True,
+            max_length=max_length,
         )
         for key in input_:
             input_[key].append(tensor[key][:-1])
@@ -99,46 +110,35 @@ def build_data(tokenizer, samples, max_length):
     return input_, labels
 
 
-def build_model(tokenizer, params):
-    config = transformers.GPT2Config(
-        vocab_size=len(tokenizer),
-        n_ctx=params.n_ctx,
-        n_positions=params.block_size,
-        n_embd=params.n_embd,
-        n_layer=params.n_layer,
-        n_head=params.n_head,
-    )
-    model = transformers.TFGPT2LMHeadModel(config=config)
-    return model
-
-
 def main(config):
-    params = load_config(config)
+    params = Config(**load_yaml(config))
     print(params)
 
-    set_seed(params.seed)
+    # Set seed
+    set_seed(params.train.seed)
 
     train_texts = load_dataset(params.input.train_file)
     valid_texts = load_dataset(params.input.valid_file)
 
     # Build and save tokenizer
-    tokenizer = transformers.AutoTokenizer.from_pretrained(params.input.pretrained_tokenizer_dir)
-    os.makedirs(params.output.tokenizer_dir, exist_ok=True)
-    # To be able to use AutoTokenizer when loading afterward,
-    # the corresponded AutoConfig should be saved.
-    # This is because the tokenizer is for BERT, which is
-    # different from our actual model GPT2.
-    # See more details about this issue here
-    #   https://github.com/huggingface/transformers/issues/4197
-    transformers.AutoConfig.from_pretrained(params.input.pretrained_tokenizer_dir).save_pretrained(params.output.tokenizer_dir)
-    tokenizer.save_pretrained(params.output.tokenizer_dir)
+    tokenizer = Tokenizer.from_file(params.input.tokenizer_file)
+    tokenizer.save(params.output.tokenizer_file)
+    tokenizer = TokenizerWrapper(tokenizer)
 
-    # Build data
-    train_dataset = Dataset(tokenizer, train_texts, params.max_length, params.batch_size)
-    valid_dataset = Dataset(tokenizer, valid_texts, params.max_length, params.batch_size)
+    # Build dataset
+    train_dataset = Dataset(
+        tokenizer, train_texts, params.train.max_length, params.train.batch_size
+    )
+    valid_dataset = Dataset(
+        tokenizer, valid_texts, params.train.max_length, params.train.batch_size
+    )
 
     # Train model
-    model = transformers.TFGPT2LMHeadModel.from_pretrained(params.input.pretrained_model_dir)
+    model = load_or_init_model(
+        pretrained_model_dir=params.input.pretrained_model_dir,
+        vocab_size=len(tokenizer),
+        params=params.model_params,
+    )
     val_best_model = train(params, model, tokenizer, train_dataset, valid_dataset)
     val_best_model.summary()
 
