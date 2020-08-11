@@ -12,7 +12,7 @@ train:
     unk_piece: "[UNK]"
     bos_piece: "[BOS]"
     eos_piece: "[EOS]"
-    user_defined_symbols:
+    control_symbols:
         - "[CLS]"
         - "[SEP]"
     input_sentence_size: 0

@@ -16,7 +16,7 @@ class TrainConfig(BaseModel):
     unk_piece: str
     bos_piece: str
     eos_piece: str
-    user_defined_symbols: List[str]
+    control_symbols: List[str]
     input_sentence_size: Union[None, int]
     shuffle_input_sentence: bool
 
