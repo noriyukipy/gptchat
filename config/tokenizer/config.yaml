@@ -1,26 +1,19 @@
 train:
     # [Input files to build vocabulary]
-    files:
-        - tokenizer/data/train.txt
+    input: tokenizer/data/train.txt
     # [Output file to save vocabulary]
-    output_file: tokenizer/output/model/tokenizer.json
-
-    # [Train parameters]
-    add_prefix_space: False
-    unk_token: "[UNK]"
-    # vocab_size is the total size of vocabulary.
-    # Even if this size sets to less than
-    #
-    #   len(special_tokens) + limit_alphabet
-    #
-    # the number of vocabularies will equals to 
-    # len(special_tokens) + limit_alphabet
+    model_prefix: tokenizer/output/model/spm
     vocab_size: 32000
-    min_frequency: 2
-    special_tokens:
-        - "[UNK]"
-        - "[PAD]"
+    pad_id: 0
+    unk_id: 1
+    bos_id: 2
+    eos_id: 3
+    pad_piece: "[PAD]"
+    unk_piece: "[UNK]"
+    bos_piece: "[BOS]"
+    eos_piece: "[EOS]"
+    control_symbols:
         - "[CLS]"
         - "[SEP]"
-    limit_alphabet: 1000
-    initial_alphabet: []
+    input_sentence_size: 0
+    shuffle_input_sentence: true

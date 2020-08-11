@@ -4,11 +4,10 @@ from gptchat.api import ModelInfo
 from gptchat.api import build_api
 from gptchat.lib import set_seed
 from gptchat.lib import load_yaml
-from gptchat.tokenizers import TokenizerWrapper
+from gptchat.tokenizers import SentencePieceTokenizer
 from .config import Config
 from .lib import generate_prepare_inputs_for_generation
 from .lib import generate
-from tokenizers import Tokenizer
 import types
 import transformers
 import uvicorn
@@ -44,8 +43,7 @@ def main(config, host=None, port=None):
     print(params)
     set_seed(params.pred.seed)
 
-    tokenizer = Tokenizer.from_file(params.output.tokenizer_file)
-    tokenizer = TokenizerWrapper(tokenizer)
+    tokenizer = SentencePieceTokenizer().load(params.input.tokenizer_file)
 
     model = transformers.TFAutoModelWithLMHead.from_pretrained(params.output.model_dir)
     # Replace generation initializer
@@ -56,7 +54,7 @@ def main(config, host=None, port=None):
     model.prepare_inputs_for_generation = method
 
     bad_words_ids = [
-        tokenizer.encode(word, add_special_tokens=False)
+        tokenizer.encode(word)
         for word in params.pred.bad_words
     ]
     handler = Handler(

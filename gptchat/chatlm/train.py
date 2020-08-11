@@ -2,9 +2,8 @@ from gptchat.lib import set_seed
 from gptchat.lib import load_yaml
 from gptchat.gpt2 import load_or_init_model
 from gptchat.gpt2 import train
-from gptchat.tokenizers import TokenizerWrapper
+from gptchat.tokenizers import SentencePieceTokenizer
 from .config import Config
-from tokenizers import Tokenizer
 import numpy as np
 import collections
 import tensorflow as tf
@@ -32,11 +31,11 @@ def encode_plus(
     pad_to_max_length=False,
     max_length=None,
 ):
-    context_ids = tokenizer.encode(context, add_special_tokens=False)
+    context_ids = tokenizer.encode(context)
     if add_sep_token:
         response_ids = [tokenizer.sep_token_id]
     if response:
-        response_ids += tokenizer.encode(response, add_special_tokens=False)
+        response_ids += tokenizer.encode(response)
     if add_eos_token:
         response_ids += [tokenizer.cls_token_id]
 
@@ -121,9 +120,7 @@ def main(config):
     valid_texts = load_dataset(params.input.valid_file)
 
     # Build and save tokenizer
-    tokenizer = Tokenizer.from_file(params.input.tokenizer_file)
-    tokenizer.save(params.output.tokenizer_file)
-    tokenizer = TokenizerWrapper(tokenizer)
+    tokenizer = SentencePieceTokenizer().load(params.input.tokenizer_file)
 
     # Build dataset
     train_dataset = Dataset(

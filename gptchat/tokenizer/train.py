@@ -1,19 +1,24 @@
-from tokenizers import SentencePieceBPETokenizer
 from pydantic import BaseModel
-from typing import List
+from typing import List, Union
 from gptchat.lib import load_yaml
+from gptchat.tokenizers import SentencePieceTokenizer
 
 
 class TrainConfig(BaseModel):
-    files: List[str]
-    output_file: str
-    add_prefix_space: bool
-    unk_token: str
+    input: str
+    model_prefix: str
     vocab_size: int
-    min_frequency: int
-    special_tokens: List[str]
-    limit_alphabet: int
-    initial_alphabet: List[str]
+    pad_id: int
+    unk_id: int
+    bos_id: int
+    eos_id: int
+    pad_piece: str
+    unk_piece: str
+    bos_piece: str
+    eos_piece: str
+    control_symbols: List[str]
+    input_sentence_size: Union[None, int]
+    shuffle_input_sentence: bool
 
 
 class Config(BaseModel):
@@ -23,29 +28,11 @@ class Config(BaseModel):
 def main(config):
     # Parse config file and convert to object
     config = Config(**load_yaml(config))
-
-    # Prepare tokenizer
-    tokenizer = SentencePieceBPETokenizer(
-        add_prefix_space=config.train.add_prefix_space,
-        unk_token=config.train.unk_token,
-    )
+    print(config)
 
     # Then train it!
-    tokenizer.train(
-        files=config.train.files,
-        vocab_size=config.train.vocab_size,
-        min_frequency=config.train.min_frequency,
-        special_tokens=config.train.special_tokens,
-        limit_alphabet=config.train.limit_alphabet,
-        initial_alphabet=config.train.initial_alphabet,
-    )
-    print(f"Vocab size={tokenizer.get_vocab_size()}")
-
-    # Save vocabulary file
-
-    output_file = config.train.output_file
-    print(f"Save model at {output_file}")
-    tokenizer.save(output_file)
+    tokenizer = SentencePieceTokenizer()
+    tokenizer.train(**config.train.dict())
 
 
 if __name__ == "__main__":
