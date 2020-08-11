@@ -11,7 +11,6 @@ class ConfigInput(BaseModel):
 
 class ConfigOutput(BaseModel):
     model_dir: str
-    tokenizer_file: str
     tensorboard_dir: str
     checkpoint_path: str
 
@@ -46,6 +45,6 @@ class ConfigModelParams(BaseModel):
 class Config(BaseModel):
     input: ConfigInput
     output: ConfigOutput
-    model_params: ConfigModelParams
+    model_params: Union[None, ConfigModelParams]
     train: ConfigTrain
     pred: ConfigPred

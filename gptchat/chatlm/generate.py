@@ -21,7 +21,7 @@ def main(config):
     model.prepare_inputs_for_generation = method
 
     bad_words_ids = [
-        tokenizer.encode(word, add_special_tokens=False) for word in params.bad_words
+        tokenizer.encode(word) for word in params.bad_words
     ]
 
     context = "おはよう"

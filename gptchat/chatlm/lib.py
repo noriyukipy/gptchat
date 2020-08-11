@@ -23,7 +23,8 @@ def generate(
     )
     gen_texts = []
     for gen_id in gen_ids:
-        gen_text = tokenizer.decode(gen_id, skip_special_tokens=False,)
+        gen_id = gen_id.numpy().tolist()
+        gen_text = tokenizer.decode(gen_id)
         cln_text = clean_output(
             decoded_str=gen_text,
             sep_token=tokenizer.sep_token,

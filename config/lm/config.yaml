@@ -8,7 +8,6 @@ input:
     pretrained_model_dir: null
 output:
     model_dir:       chatlm/output/model
-    tokenizer_file:  chatlm/output/model/tokenizer.json
     tensorboard_dir: chatlm/output/tensorboard
     checkpoint_path: chatlm/output/ckpt.h5
 

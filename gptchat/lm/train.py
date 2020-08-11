@@ -59,7 +59,6 @@ def main(config):
     valid_texts = load_dataset(params.input.valid_file)
 
     tokenizer = SentencePieceTokenizer().load(params.input.tokenizer_file)
-    # tokenizer.save(params.output.tokenizer_file)
 
     # Build data
     train_dataset = Dataset(

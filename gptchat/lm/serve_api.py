@@ -4,9 +4,8 @@ from gptchat.api import Request
 from gptchat.api import Response
 from gptchat.api import ModelInfo
 from gptchat.api import build_api
-from gptchat.tokenizers import TokenizerWrapper
+from gptchat.tokenizers import SentencePieceTokenizer
 from .config import Config
-from tokenizers import Tokenizer
 import tensorflow as tf
 import transformers
 import uvicorn
@@ -22,12 +21,10 @@ class Handler:
         assert not req.response
 
         bad_words_ids = [
-            self._tokenizer.encode(word, add_special_tokens=False)
+            self._tokenizer.encode(word)
             for word in self._params.pred.bad_words
         ]
-        input_ids = self._tokenizer.encode(
-            req.context, add_special_tokens=False,
-        )
+        input_ids = self._tokenizer.encode(req.context)
         output = self._model.generate(
             input_ids=tf.convert_to_tensor([input_ids]),
             do_sample=self._params.pred.do_sample,
@@ -36,6 +33,9 @@ class Handler:
             bad_words_ids=bad_words_ids,
             max_length=self._params.pred.max_length,
         )
+
+        # Convert output to Python list for tokenizer.decode
+        output = output.numpy().tolist()
         response = self._tokenizer.decode(output[0])
 
         # Clean up response
@@ -53,8 +53,7 @@ def main(config, host=None, port=None):
     print(params)
     set_seed(params.pred.seed)
 
-    tokenizer = Tokenizer.from_file(params.output.tokenizer_file)
-    tokenizer = TokenizerWrapper(tokenizer)
+    tokenizer = SentencePieceTokenizer().load(params.input.tokenizer_file)
     model = transformers.TFAutoModelWithLMHead.from_pretrained(params.output.model_dir)
     handler = Handler(model, tokenizer, params)
 
