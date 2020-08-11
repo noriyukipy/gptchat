@@ -2,9 +2,18 @@ train:
     # [Input files to build vocabulary]
     input: tokenizer/data/train.txt
     # [Output file to save vocabulary]
-    model_prefix: tokenizer/output/tokenizer/m
-
+    model_prefix: tokenizer/output/model/spm
     vocab_size: 32000
+    pad_id: 0
+    unk_id: 1
+    bos_id: 2
+    eos_id: 3
+    pad_piece: "[PAD]"
+    unk_piece: "[UNK]"
+    bos_piece: "[BOS]"
+    eos_piece: "[EOS]"
     user_defined_symbols:
         - "[CLS]"
         - "[SEP]"
+    input_sentence_size: 0
+    shuffle_input_sentence: true

@@ -2,7 +2,7 @@
 input:
     train_file: lm/data/train.txt
     valid_file: lm/data/valid.txt
-    tokenizer_file: tokenizer/output/model/tokenizer.json
+    tokenizer_file: tokenizer/output/model/spm.model
     # If pretrained_model_dir is set except for null,
     # the model is loaded from here and `model_param` section is ignored
     pretrained_model_dir: null

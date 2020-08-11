@@ -3,10 +3,8 @@ from gptchat.lib import load_yaml
 from gptchat.gpt2 import train
 from gptchat.gpt2 import load_or_init_model
 from .config import Config
-from gptchat.tokenizers import TokenizerWrapper
-from tokenizers import Tokenizer
+from gptchat.tokenizers import SentencePieceTokenizer
 import tensorflow as tf
-import transformers
 import numpy as np
 import math
 
@@ -18,16 +16,11 @@ def load_dataset(path):
     return texts
 
 
-def build_tokenizer(tokenizer_model_name):
-    tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer_model_name)
-    return tokenizer
-
-
 class Dataset(tf.keras.utils.Sequence):
     def __init__(self, tokenizer, texts, block_size, batch_size):
         ids = []
         for text in texts:
-            ids.extend(tokenizer.encode(text, add_special_tokens=False))
+            ids.extend(tokenizer.encode(text))
 
         samples = []
         for idx in range(0, len(ids) - block_size + 1, block_size):
@@ -65,18 +58,21 @@ def main(config):
     train_texts = load_dataset(params.input.train_file)
     valid_texts = load_dataset(params.input.valid_file)
 
-    # Build and save tokenizer
-    # Build and save tokenizer
-    tokenizer = Tokenizer.from_file(params.input.tokenizer_file)
-    tokenizer.save(params.output.tokenizer_file)
-    tokenizer = TokenizerWrapper(tokenizer)
+    tokenizer = SentencePieceTokenizer().load(params.input.tokenizer_file)
+    # tokenizer.save(params.output.tokenizer_file)
 
     # Build data
     train_dataset = Dataset(
-        tokenizer, train_texts, params.train.block_size, params.train.batch_size
+        tokenizer,
+        train_texts,
+        params.train.block_size,
+        params.train.batch_size
     )
     valid_dataset = Dataset(
-        tokenizer, valid_texts, params.train.block_size, params.train.batch_size
+        tokenizer,
+        valid_texts,
+        params.train.block_size,
+        params.train.batch_size
     )
 
     # Train model
@@ -85,7 +81,9 @@ def main(config):
         vocab_size=len(tokenizer),
         params=params.model_params,
     )
-    val_best_model = train(params, model, tokenizer, train_dataset, valid_dataset)
+    val_best_model = train(
+        params, model, tokenizer, train_dataset, valid_dataset
+    )
     val_best_model.summary()
 
     # Evaluate best model with validation set
