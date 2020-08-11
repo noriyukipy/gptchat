@@ -25,7 +25,7 @@ $ cd config
 Train your tokenizer with `gptchat.tokenizer.train`
 
 ```sh
-$ docker container run  -v $(pwd)/config:/work -w /work --rm -it gptchat python -m gptchat.tokenizer.train --config=tokenizer/config.yaml
+$ docker container run  -v $(pwd):/work -w /work --rm -it gptchat python -m gptchat.tokenizer.train --config=tokenizer/config.yaml
 ```
 
 ## LM Model
