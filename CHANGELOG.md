@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Change tokenizer from tokenizers by HuggingFace to original SentencePiece tokenizer
+### Fixed
+- Generation algorithm for chatlm which caused by replacing tokenizer to SentencePiece
 
 
 ## [v0.4.0] - 2020/08/01
