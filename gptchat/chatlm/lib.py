@@ -9,7 +9,6 @@ def generate(
     model_input = encode_plus(
         context=context, tokenizer=tokenizer, response=response, add_eos_token=False,
     )
-    max_length_with_context = max_length - len(model_input["input_ids"])
     input_ids = tf.convert_to_tensor([model_input["input_ids"]])
     gen_ids = model.generate(
         input_ids,
@@ -24,13 +23,9 @@ def generate(
     gen_texts = []
     for gen_id in gen_ids:
         gen_id = gen_id.numpy().tolist()
-        gen_text = tokenizer.decode(gen_id)
-        cln_text = clean_output(
-            decoded_str=gen_text,
-            sep_token=tokenizer.sep_token,
-            cls_token=tokenizer.cls_token,
-        )
-        gen_texts.append(cln_text)
+        cln_id = clean_output(gen_id, tokenizer.sep_token_id, tokenizer.cls_token_id)
+        gen_text = tokenizer.decode(cln_id)
+        gen_texts.append(gen_text)
 
     # Select the median length text as a final output
     mid_idx = int(len(gen_texts) / 2)
@@ -39,17 +34,17 @@ def generate(
     return selected_text, gen_texts
 
 
-def clean_output(decoded_str, sep_token, cls_token):
-    cleaned_str = decoded_str.replace(" ", "")
+def clean_output(ids, sep_token_id, cls_token_id):
+    left_idx = ids.index(sep_token_id)
+    cleaned_ids = ids[left_idx:]
 
-    left_idx = cleaned_str.find(sep_token)
-    cleaned_str = cleaned_str[left_idx + len(sep_token) :]
+    try:
+        right_idx = cleaned_ids.index(cls_token_id)
+    except ValueError:
+        right_idx = len(cleaned_ids)
+    cleaned_ids = cleaned_ids[:right_idx]
 
-    right_idx = cleaned_str.find(cls_token)
-    if right_idx != -1:
-        cleaned_str = cleaned_str[:right_idx]
-
-    return cleaned_str
+    return cleaned_ids
 
 
 def generate_prepare_inputs_for_generation(sep_token_id):
