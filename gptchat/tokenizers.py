@@ -27,6 +27,10 @@ class SentencePieceTokenizer:
         return self._spm.decode(*args, **kwargs)
 
     @property
+    def unk_token_id(self):
+        return self._spm.unk_id()
+
+    @property
     def sep_token_id(self):
         return self._get_id(self.sep_token)
 

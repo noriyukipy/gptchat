@@ -24,6 +24,11 @@ class Handler:
             self._tokenizer.encode(word)
             for word in self._params.pred.bad_words
         ]
+        # Add unk id to bad_words_ids
+        # [TODO] This config needs to be set by configuration file
+        # in the future implementation
+        bad_words_ids.append([self._tokenizer.unk_token_id])
+
         input_ids = self._tokenizer.encode(req.context)
         output = self._model.generate(
             input_ids=tf.convert_to_tensor([input_ids]),
