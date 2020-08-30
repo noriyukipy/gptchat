@@ -57,6 +57,11 @@ def main(config, host=None, port=None):
         tokenizer.encode(word)
         for word in params.pred.bad_words
     ]
+    # Add unk id to bad_words_ids
+    # [TODO] This config needs to be set by configuration file
+    # in the future implementation
+    bad_words_ids.append([tokenizer.unk_token_id])
+
     handler = Handler(
         model=model,
         tokenizer=tokenizer,
