@@ -4,8 +4,7 @@ import typing
 
 
 class Request(BaseModel):
-    context: str
-    response: str = None
+    context: typing.List[str]
 
 
 class ModelInfo(BaseModel):

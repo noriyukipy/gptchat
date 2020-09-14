@@ -30,7 +30,6 @@ class Handler:
             top_p=self._top_p,
             max_length=self._max_length,
             context=req.context,
-            response=req.response,
             bad_words_ids=self._bad_words_ids,
         )
         return Response(
