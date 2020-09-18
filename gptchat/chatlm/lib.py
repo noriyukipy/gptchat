@@ -15,7 +15,7 @@ def generate(
         top_k=top_k,
         top_p=top_p,
         bad_words_ids=bad_words_ids,
-        eos_token_id=tokenizer.cls_token_id,
+        eos_token_id=tokenizer.sep_token_id,
         max_length=max_length,
     )
     gen_texts = []
