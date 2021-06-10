@@ -8,7 +8,7 @@ setuptools.setup(
         "transformers==2.10.0",
         "sentencepiece==0.1.91",
         "fire==0.2.1",
-        "fastapi==0.57.0",
+        "fastapi==0.65.2",
         "uvicorn==0.11.7",
         "pytest==5.4.1",
         "tqdm==4.43.0",
